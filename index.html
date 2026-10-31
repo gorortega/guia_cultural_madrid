@@ -631,7 +631,6 @@ function renderCards(filtered){
 
   let html = "";
 
-  // Si estamos en "Ver Todo" (currentCategory === "all"), ponemos TODOS los visitados arriba del todo en una sección propia
   if (currentCategory === "all") {
     const visitedList = placesData.filter(item => window.visitedItems.includes(item.id));
     if (visitedList.length > 0) {
@@ -641,7 +640,6 @@ function renderCards(filtered){
     }
   }
 
-  // A continuación, agrupamos el resto (o todo si estamos en otra categoría)
   const grouped = {};
   filtered.forEach(item => (grouped[item.categoria] ??= []).push(item));
 
@@ -656,10 +654,7 @@ function renderCards(filtered){
 
   contentArea.innerHTML = html;
 }
-
-    contentArea.innerHTML = html;
-  } else {
-    // Si estamos en una pestaña específica, ordenamos los visitados primero dentro de esa categoría
+   // Si estamos en una pestaña específica, ordenamos los visitados primero dentro de esa categoría
     filtered.sort((a, b) => {
       const aVisited = window.visitedItems.includes(a.id) ? 1 : 0;
       const bVisited = window.visitedItems.includes(b.id) ? 1 : 0;
