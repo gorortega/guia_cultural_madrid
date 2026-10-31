@@ -628,6 +628,12 @@ function renderCards(filtered){
     contentArea.innerHTML=`<div class="empty">${currentCategory==="vistos"?"Aún no has marcado ningún espacio como visitado.":"No se encontraron resultados para los filtros seleccionados."}</div>`;
     return;
   }
+  // Ordenar para que los visitados salgan siempre arriba
+  filtered.sort((a, b) => {
+    const aVisited = window.visitedItems.includes(a.id) ? 1 : 0;
+    const bVisited = window.visitedItems.includes(b.id) ? 1 : 0;
+    return bVisited - aVisited;
+  });
   const grouped={};
   filtered.forEach(item=>(grouped[item.categoria]??=[]).push(item));
   let html="";
