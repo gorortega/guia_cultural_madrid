@@ -628,96 +628,78 @@ function renderCards(filtered){
     contentArea.innerHTML = `<div class="empty">${currentCategory==="vistos"?"Aún no has marcado ningún espacio como visitado.":"No se encontraron resultados para los filtros seleccionados."}</div>`;
     return;
   }
-
-  let html = "";
-
-  if (currentCategory === "all") {
-    const visitedList = placesData.filter(item => window.visitedItems.includes(item.id));
-    if (visitedList.length > 0) {
-      html += `<section><h2 class="section-title" style="color: #4ade80;">Lugares Visitados (${visitedList.length})</h2><div class="grid">`;
-      html += visitedList.map(item => createCardHTML(item)).join("");
-      html += `</div></section>`;
-    }
-  }
+  
+  // Ordenar para que los visitados salgan siempre arriba dentro de cada categoría
+  filtered.sort((a, b) => {
+    const aVisited = window.visitedItems.includes(a.id) ? 1 : 0;
+    const bVisited = window.visitedItems.includes(b.id) ? 1 : 0;
+    return bVisited - aVisited;
+  });
 
   const grouped = {};
   filtered.forEach(item => (grouped[item.categoria] ??= []).push(item));
-
+  let html = "";
   Object.keys(grouped).forEach(catKey => {
     const cat = categories[catKey];
     if (cat) {
       html += `<section><h2 class="section-title" style="color:${cat.color}">${cat.title}</h2><div class="grid">`;
-      html += grouped[catKey].map(item => createCardHTML(item)).join("");
+      grouped[catKey].forEach(item => {
+        const isVisited = window.visitedItems.includes(item.id);
+        const scheduledEvent = window.scheduledEvents.find(e=>e.placeId===item.id);
+        const isScheduled = !!scheduledEvent;
+        const telClean = item.telefono.replace(/\s/g,"");
+        const hasMyNotes = !!window.userNotes[item.id];
+
+        let scheduleButtonHtml = `<button class="btn-action btn-schedule" onclick="openModal('${item.id}')">📅 Agendar</button>`;
+        if(isScheduled){
+          scheduleButtonHtml = `
+            <button class="btn-action btn-scheduled" onclick="goToScheduledDate('${item.id}')" title="Ver en agenda (${scheduledEvent.date})">✓ Agendado</button>
+            <button class="btn-action btn-edit-schedule" onclick="editScheduledEvent('${item.id}')" title="Editar / Reagendar">✏️</button>
+          `;
+        }
+
+        const notesButtonHtml = `<button class="btn-action btn-user-notes ${hasMyNotes?'has-notes':''}" onclick="openUserNotesModal('${item.id}')" title="Anotaciones personales">${hasMyNotes ? '📝 Notas ✓' : '📝 Notas'}</button>`;
+        const userNotePreview = hasMyNotes ? `<div class="user-notes-preview"><strong>Mis Notas:</strong> ${parseMarkdownLinks(window.userNotes[item.id])}</div>` : '';
+
+        html += `
+          <article class="card ${item.categoria} ${isVisited?"visited":""}" id="card-${item.id}">
+            <div class="card-img-container">
+              <a href="${item.web}" target="_blank" rel="noopener noreferrer">
+                <img id="img-${item.id}" class="card-img loading" alt="${escapeHtml(item.nombre)}">
+              </a>
+              <div class="image-credit" id="credit-${item.id}">Buscando imagen libre en Wikimedia Commons…</div>
+            </div>
+            <div class="card-header">
+              <div class="card-title"><a href="${item.web}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.nombre)}</a></div>
+              <span class="badge">${escapeHtml(item.badgeText)}</span>
+            </div>
+            <div class="card-body">
+              <div class="info-row"><span class="info-label">Dirección:</span><span class="info-value">${escapeHtml(item.direccion)}</span></div>
+              <div class="info-row"><span class="info-label">Teléfono:</span><span class="info-value"><a href="tel:${telClean}" class="phone-link">${escapeHtml(item.telefono)}</a></span></div>
+              <div class="price-box">
+                <div class="price-row"><span>Precio General:</span><strong>${escapeHtml(item.precioGeneral)}</strong></div>
+                <div class="price-row"><span>Con DARDE:</span><strong class="darde">${escapeHtml(item.precioDARDE)}</strong></div>
+              </div>
+              <div class="free-info"><strong>Público general:</strong> ${escapeHtml(item.gratisGeneral)}</div>
+              <div class="notes">${escapeHtml(item.notas)}</div>
+              ${userNotePreview}
+            </div>
+            <div class="card-footer">
+              <div style="display:flex;gap:4px;">
+                ${scheduleButtonHtml}
+                ${notesButtonHtml}
+              </div>
+              <button class="btn-action btn-visit" onclick="toggleVisit('${item.id}')">${isVisited?"✓ Visitado":"Marcar visto"}</button>
+            </div>
+          </article>`;
+      });
       html += `</div></section>`;
     }
   });
 
   contentArea.innerHTML = html;
-}
-   // Si estamos en una pestaña específica, ordenamos los visitados primero dentro de esa categoría
-    filtered.sort((a, b) => {
-      const aVisited = window.visitedItems.includes(a.id) ? 1 : 0;
-      const bVisited = window.visitedItems.includes(b.id) ? 1 : 0;
-      return bVisited - aVisited;
-    });
-
-    const grouped = {};
-    filtered.forEach(item => (grouped[item.categoria] ??= []).push(item));
-    let html = "";
-    Object.keys(grouped).forEach(catKey => {
-      const cat = categories[catKey];
-      if (cat) {
-        html += `<section><h2 class="section-title" style="color:${cat.color}">${cat.title}</h2><div class="grid">`;
-        html += grouped[catKey].map(item => createCardHTML(item)).join("");
-        html += `</div></section>`;
-      }
-    });
-    contentArea.innerHTML = html;
-  }
-}
-
-      const notesButtonHtml = `<button class="btn-action btn-user-notes ${hasMyNotes?'has-notes':''}" onclick="openUserNotesModal('${item.id}')" title="Anotaciones personales">${hasMyNotes ? '📝 Notas ✓' : '📝 Notas'}</button>`;
-
-      const userNotePreview = hasMyNotes ? `<div class="user-notes-preview"><strong>Mis Notas:</strong> ${parseMarkdownLinks(window.userNotes[item.id])}</div>` : '';
-
-      html+=`
-      <article class="card ${item.categoria} ${isVisited?"visited":""}" id="card-${item.id}">
-        <div class="card-img-container">
-          <a href="${item.web}" target="_blank" rel="noopener noreferrer">
-            <img id="img-${item.id}" class="card-img loading" alt="${escapeHtml(item.nombre)}">
-          </a>
-          <div class="image-credit" id="credit-${item.id}">Buscando imagen libre en Wikimedia Commons…</div>
-        </div>
-        <div class="card-header">
-          <div class="card-title"><a href="${item.web}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.nombre)}</a></div>
-          <span class="badge">${escapeHtml(item.badgeText)}</span>
-        </div>
-        <div class="card-body">
-          <div class="info-row"><span class="info-label">Dirección:</span><span class="info-value">${escapeHtml(item.direccion)}</span></div>
-          <div class="info-row"><span class="info-label">Teléfono:</span><span class="info-value"><a href="tel:${telClean}" class="phone-link">${escapeHtml(item.telefono)}</a></span></div>
-          <div class="price-box">
-            <div class="price-row"><span>Precio General:</span><strong>${escapeHtml(item.precioGeneral)}</strong></div>
-            <div class="price-row"><span>Con DARDE:</span><strong class="darde">${escapeHtml(item.precioDARDE)}</strong></div>
-          </div>
-          <div class="free-info"><strong>Público general:</strong> ${escapeHtml(item.gratisGeneral)}</div>
-          <div class="notes">${escapeHtml(item.notas)}</div>
-          ${userNotePreview}
-        </div>
-        <div class="card-footer">
-          <div style="display:flex;gap:4px;">
-            ${scheduleButtonHtml}
-            ${notesButtonHtml}
-          </div>
-          <button class="btn-action btn-visit" onclick="toggleVisit('${item.id}')">${isVisited?"✓ Visitado":"Marcar visto"}</button>
-        </div>
-      </article>`;
-    });
-    html+="</div></section>";
-  });
-  contentArea.innerHTML=html;
   filtered.forEach(item=>loadCommonsImage(item,document.getElementById(`img-${item.id}`),document.getElementById(`credit-${item.id}`)));
 }
-
 function renderContent(){
   document.getElementById("tabVistos").innerText=`✓ Vistos (${window.visitedItems.length})`;
   document.getElementById("tabAgenda").innerText=`📅 Agenda Eventos (${window.scheduledEvents.length})`;
