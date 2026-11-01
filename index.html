@@ -14,6 +14,7 @@
   --line:#40505e;
   --accent:#9fc5e8;
 
+  /* Paleta pastel por categoría */
   --museos-bg:#3b3038; --museos-line:#d7a9ba; --museos-tag:#efd5df; --museos-text:#513746;
   --patrimonio-bg:#3d392c; --patrimonio-line:#dbc88f; --patrimonio-tag:#f2e8bd; --patrimonio-text:#514829;
   --teatros-bg:#363143; --teatros-line:#c7b1dc; --teatros-tag:#e5d8f0; --teatros-text:#4b3c5a;
@@ -141,12 +142,13 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
 .form-group textarea{height:160px;resize:vertical;line-height:1.4}
 .modal-buttons{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 
+/* ESTILOS MOLESKINE CON SCROLL INTERNO CONTINUO */
 .moleskine-container{max-width:900px;margin:0 auto;background:#202c38;border-radius:12px;padding:15px;border:1px solid #3f5162;width:100%;box-sizing:border-box;}
-.moleskine-toolbar{background:#18212b;padding:10px;border-radius:8px;border:1px solid #3f5162;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.moleskine-toolbar{background:#18212b;padding:10px;border-radius:8px;border:1px solid #3f5162;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:sticky;top:0;z-index:10;}
 .moleskine-tool-btn{padding:6px 12px;border-radius:6px;border:1px solid #3f5162;background:#263442;color:#fff;cursor:pointer;font-weight:bold;font-size:0.85rem}
 .moleskine-tool-btn.active{background:var(--accent);color:#000;border-color:#fff}
 .folio-wrapper{background:#fcfbf7;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);overflow-y:auto;max-height:75vh;border:1px solid #dcd6cd;position:relative;width:100%;}
-#moleskineCanvas{display:block;margin:0 auto;background:#fcfbf7;touch-action:pan-y;cursor:crosshair;width:100%;max-width:800px;height:auto;}
+#moleskineCanvas{display:block;margin:0 auto;background:#fcfbf7;touch-action:none;cursor:crosshair;width:100%;max-width:800px;height:auto;}
 .saved-notes-list{margin-top:15px;background:#18212b;padding:12px;border-radius:8px;border:1px solid #3f5162}
 .saved-note-card{background:#263442;padding:10px 12px;border-radius:6px;border:1px solid #3f5162;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
 
@@ -163,6 +165,7 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
 }
 </style>
 
+<!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -249,28 +252,33 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
   <div id="contentArea"></div>
 </div>
 
+<!-- SECCIÓN NOTAS MOLESKINE -->
 <div id="moleskineSection" style="display:none;" class="moleskine-container">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
     <h2 style="color:var(--accent); font-family:serif; margin:0; font-size:1.3rem;">📓 Cuaderno Moleskine</h2>
     <div style="display:flex; gap:6px;">
       <button onclick="startNewNote()" style="background:#2563eb; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">➕ Nueva Nota</button>
-      <button onclick="exitMoleskine()" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">← Volver</button>
+      <button onclick="exitMoleskine()" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">← Volver a Menú</button>
     </div>
   </div>
 
-  <div style="margin-bottom:10px;">
-    <input type="text" id="moleskineTitleInput" placeholder="Título de la nota (ej. Nota Prado)..." style="width:100%; padding:8px 10px; border-radius:6px; border:1px solid #3f5162; background:#18212b; color:#fff; font-size:0.9rem;">
+  <div style="margin-bottom:10px; display:flex; gap:8px; flex-wrap:wrap;">
+    <input type="text" id="moleskineTitleInput" placeholder="Título de la nota (ej. Nota Prado)..." style="flex:1; min-width:200px; padding:7px 10px; border-radius:6px; border:1px solid #3f5162; background:#18212b; color:#fff; font-size:0.9rem;">
+    <select id="moleskinePlaceSelect" style="padding:7px; border-radius:6px; border:1px solid #3f5162; background:#18212b; color:#fff; font-size:0.9rem;">
+      <option value="">-- Vincular a un lugar --</option>
+    </select>
   </div>
 
+  <!-- Barra de Herramientas -->
   <div class="moleskine-toolbar">
     <button onclick="setTool('pen')" id="tool-pen" class="moleskine-tool-btn active">✒️ Pluma</button>
     <button onclick="setTool('pencil')" id="tool-pencil" class="moleskine-tool-btn">✏️ Lápiz</button>
-    <button onclick="setTool('watercolor')" id="tool-watercolor" class="moleskine-tool-btn">🖌️ Acuarela (Brocha Suave)</button>
+    <button onclick="setTool('watercolor')" id="tool-watercolor" class="moleskine-tool-btn">🖌️ Pincel Acuarela</button>
     <button onclick="setTool('eraser')" id="tool-eraser" class="moleskine-tool-btn">🧹 Goma</button>
     <button onclick="undoLastStroke()" class="moleskine-tool-btn" style="background:#4b5563;">↩️ Deshacer</button>
     
     <div style="display:flex; gap:4px; align-items:center;">
-      <input type="color" id="moleskineColorPicker" value="#000000" onchange="customColor(this.value)" style="width:26px; height:26px; border:none; cursor:pointer; background:none;">
+      <input type="color" id="colorPicker" value="#000000" onchange="customColor(this.value)" style="width:26px; height:26px; border:none; cursor:pointer; background:none;">
       <button onclick="setColor('#000000')" style="background:#000000; width:20px; height:20px; border-radius:50%; border:1px solid #fff;"></button>
       <button onclick="setColor('#2563eb')" style="background:#2563eb; width:20px; height:20px; border-radius:50%; border:1px solid #fff;"></button>
       <button onclick="setColor('#dc2626')" style="background:#dc2626; width:20px; height:20px; border-radius:50%; border:1px solid #fff;"></button>
@@ -278,7 +286,7 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
       <button onclick="setColor('#10b981')" style="background:#10b981; width:20px; height:20px; border-radius:50%; border:1px solid #fff;"></button>
     </div>
 
-    <select id="moleskineSize" onchange="setSize(this.value)" style="padding:4px; border-radius:4px; background:#263442; color:#fff; border:1px solid #3f5162; font-size:0.8rem;">
+    <select id="brushSize" onchange="setSize(this.value)" style="padding:4px; border-radius:4px; background:#263442; color:#fff; border:1px solid #3f5162; font-size:0.8rem;">
       <option value="1">Muy Fino</option>
       <option value="3">Fino</option>
       <option value="6" selected>Medio</option>
@@ -293,16 +301,26 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     <button onclick="clearCanvas()" class="moleskine-tool-btn" style="background:#ef4444;">🗑️ Limpiar</button>
   </div>
 
-  <div id="photoControls" style="display:none; background:#18212b; padding:8px; border-radius:6px; margin-bottom:10px; align-items:center; gap:8px; border:1px solid #3f5162; flex-wrap:wrap;">
-    <span style="font-size:0.8rem;">Tamaño foto:</span>
-    <input type="range" id="photoScale" min="0.2" max="1.0" step="0.05" value="0.5" oninput="updatePhotoScale(this.value)">
-    <span style="font-size:0.8rem;">Posición Y:</span>
-    <input type="range" id="photoPosY" min="10" max="800" step="10" value="100" oninput="updatePhotoPosY(this.value)">
-    <button onclick="confirmPhotoPlacement()" style="background:#10b981; border:none; color:#fff; padding:4px 10px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.8rem;">Fijar Foto</button>
+  <!-- Controles completos de la Foto: Tamaño + Posición Horizontal (X) + Posición Vertical (Y) -->
+  <div id="photoControls" style="display:none; background:#18212b; padding:10px; border-radius:6px; margin-bottom:10px; align-items:center; gap:12px; border:1px solid #3f5162; flex-wrap:wrap;">
+    <div style="display:flex; align-items:center; gap:6px;">
+      <span style="font-size:0.8rem;">Tamaño:</span>
+      <input type="range" id="photoScale" min="0.15" max="1.0" step="0.05" value="0.45" oninput="updatePhotoScale(this.value)">
+    </div>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <span style="font-size:0.8rem;">Posición X (Horiz.):</span>
+      <input type="range" id="photoPosX" min="0" max="500" step="10" value="50" oninput="updatePhotoPosX(this.value)">
+    </div>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <span style="font-size:0.8rem;">Posición Y (Vert.):</span>
+      <input type="range" id="photoPosY" min="10" max="2200" step="10" value="100" oninput="updatePhotoPosY(this.value)">
+    </div>
+    <button onclick="confirmPhotoPlacement()" style="background:#10b981; border:none; color:#fff; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✓ Fijar Foto en el Papel</button>
   </div>
 
-  <div class="folio-wrapper">
-    <canvas id="moleskineCanvas" width="800" height="1100"></canvas>
+  <!-- Contenedor del Folio con Scroll Interno -->
+  <div class="folio-wrapper" id="folioWrapper">
+    <canvas id="moleskineCanvas" width="800" height="2500"></canvas>
   </div>
 
   <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
@@ -311,6 +329,7 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
   </div>
   <div id="gpsStatus" style="font-size:11px; color:var(--muted); font-style:italic; margin-top:4px;"></div>
 
+  <!-- Biblioteca de Notas -->
   <div class="saved-notes-list">
     <h3 style="color:var(--accent); margin-bottom:8px; font-size:1rem;">📚 Biblioteca de Notas Moleskine</h3>
     <div id="savedNotesContainer"></div>
@@ -795,6 +814,7 @@ function renderContent(){
   renderCards(filtered);
 }
 
+/* ---------- AGENDA ---------- */
 function dateKey(y,m,d){return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`}
 function eventsForDate(key){return window.scheduledEvents.filter(e=>e.date===key).sort((a,b)=>a.time.localeCompare(b.time))}
 function localTodayKey(){
@@ -966,6 +986,7 @@ document.getElementById("userNotesModal").addEventListener("click",e=>{if(e.targ
 
 renderContent();
 
+/* ---------- LÓGICA MOLESKINE CON DIBUJO SÓLO CON PEN Y FOTO X/Y/ESCALA ---------- */
 let canvas = document.getElementById("moleskineCanvas");
 let ctx = canvas ? canvas.getContext("2d") : null;
 let isDrawing = false;
@@ -980,6 +1001,17 @@ let pendingImage = null;
 let pendingImgPos = { x: 50, y: 100, width: 350, height: 250 };
 let maxYWritten = 50;
 
+function initMoleskineSelect() {
+  const select = document.getElementById("moleskinePlaceSelect");
+  if(!select || select.options.length > 1) return;
+  data.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p.id;
+    opt.textContent = p.nombre;
+    select.appendChild(opt);
+  });
+}
+
 function saveCanvasState() {
   if(!ctx) return;
   if(undoStack.length >= 20) undoStack.shift();
@@ -993,20 +1025,42 @@ function undoLastStroke() {
 
 function setTool(tool) {
   currentTool = tool;
-  document.querySelectorAll(".moleskine-tool-btn").forEach(b => b.classList.remove("active"));
-  const btn = document.getElementById(`tool-${tool}`);
-  if(btn) btn.classList.add("active");
+  const tools = ['pen', 'pencil', 'watercolor', 'eraser'];
+  tools.forEach(t => {
+    const btn = document.getElementById(`tool-${t}`);
+    if(btn) {
+      btn.style.background = tool === t ? 'var(--accent)' : '#263442';
+      btn.style.color = tool === t ? '#000' : '#fff';
+    }
+  });
 
-  if(tool === 'pen'){ currentColor = "#000000"; currentSize = 4; }
-  else if(tool === 'pencil'){ currentColor = "#334155"; currentSize = 2; }
-  else if(tool === 'watercolor'){ currentColor = "#3b82f6"; currentSize = 22; }
-  else if(tool === 'eraser'){ currentSize = 20; }
-  document.getElementById("moleskineSize").value = currentSize;
+  if(tool === 'pen') {
+    currentColor = "#000000";
+    if(ctx) ctx.globalAlpha = 1.0;
+  } else if(tool === 'pencil') {
+    currentColor = "#333333";
+    if(ctx) ctx.globalAlpha = 0.85;
+  } else if(tool === 'watercolor') {
+    currentColor = "#f59e0b"; 
+    if(ctx) ctx.globalAlpha = 0.25;  
+  } else if(tool === 'eraser') {
+    if(ctx) ctx.globalAlpha = 1.0;
+  }
 }
 
-function setColor(color){ currentColor = color; document.getElementById("moleskineColorPicker").value = color; }
-function customColor(color){ currentColor = color; }
-function setSize(size){ currentSize = parseFloat(size); }
+function setColor(color) {
+  currentColor = color;
+  if(currentTool === 'watercolor' && ctx) ctx.globalAlpha = 0.25;
+}
+
+function customColor(color) {
+  currentColor = color;
+  if(currentTool === 'watercolor' && ctx) ctx.globalAlpha = 0.25;
+}
+
+function setSize(size) {
+  currentSize = parseFloat(size);
+}
 
 if(canvas) {
   canvas.addEventListener("pointerdown", startDrawing);
@@ -1016,57 +1070,41 @@ if(canvas) {
 }
 
 function startDrawing(e) {
-  if(!ctx) return;
+  // Sólo se permite pintar con Pen (Lápiz táctil / S Pen) o Mouse. Se ignora el toque con 1 o 2 dedos.
+  if(!ctx || (e.pointerType !== "pen" && e.pointerType !== "mouse")) return;
   saveCanvasState();
   isDrawing = true;
   ctx.beginPath();
   const rect = canvas.getBoundingClientRect();
-  const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-  const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-  const x = (clientX - rect.left) * (canvas.width / rect.width);
-  const y = (clientY - rect.top) * (canvas.height / rect.height);
+  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
   if(y > maxYWritten) maxYWritten = y;
   ctx.moveTo(x, y);
 }
 
 function draw(e) {
-  if(!isDrawing || !ctx) return;
+  if(!isDrawing || !ctx || (e.pointerType !== "pen" && e.pointerType !== "mouse")) return;
   const rect = canvas.getBoundingClientRect();
-  const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-  const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-  const x = (clientX - rect.left) * (canvas.width / rect.width);
-  const y = (clientY - rect.top) * (canvas.height / rect.height);
+  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
   if(y > maxYWritten) maxYWritten = y;
 
   ctx.lineWidth = currentSize;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-  ctx.shadowBlur = 0;
 
-  if(currentTool === 'pen'){
-    ctx.globalAlpha = 1.0;
+  if(currentTool === 'eraser') {
+    ctx.strokeStyle = "#fcfbf7"; 
+  } else {
     ctx.strokeStyle = currentColor;
-  } else if(currentTool === 'pencil'){
-    ctx.globalAlpha = 0.65;
-    ctx.strokeStyle = currentColor;
-  } else if(currentTool === 'watercolor'){
-    ctx.globalAlpha = 0.16;
-    ctx.shadowBlur = 6;
-    ctx.shadowColor = currentColor;
-    ctx.strokeStyle = currentColor;
-  } else if(currentTool === 'eraser'){
-    ctx.globalAlpha = 1.0;
-    ctx.strokeStyle = "#fcfbf7";
   }
 
   ctx.lineTo(x, y);
   ctx.stroke();
 }
 
-function stopDrawing() {
-  if(!isDrawing) return;
+function stopDrawing(e) {
   isDrawing = false;
-  if(ctx){ ctx.globalAlpha = 1.0; ctx.shadowBlur = 0; }
 }
 
 function clearCanvas() {
@@ -1080,6 +1118,7 @@ function clearCanvas() {
 function startNewNote() {
   currentActiveNoteId = null;
   document.getElementById("moleskineTitleInput").value = "";
+  document.getElementById("moleskinePlaceSelect").value = "";
   currentCoords = null;
   undoStack = [];
   clearCanvas();
@@ -1100,9 +1139,11 @@ function handleFotoGPS(event) {
       const targetWidth = canvas.width * 0.45;
       const aspect = img.height / img.width;
       const targetHeight = targetWidth * aspect;
-      const targetY = Math.min(maxYWritten + 10, canvas.height - targetHeight - 20);
+      const targetY = Math.min(maxYWritten + 20, canvas.height - targetHeight - 20);
 
       pendingImgPos = { x: 50, y: targetY, width: targetWidth, height: targetHeight };
+      document.getElementById("photoScale").value = 0.45;
+      document.getElementById("photoPosX").value = 50;
       document.getElementById("photoPosY").value = targetY;
       document.getElementById("photoControls").style.display = "flex";
       renderPendingImage();
@@ -1141,6 +1182,13 @@ function updatePhotoScale(scaleVal) {
   renderPendingImage();
 }
 
+function updatePhotoPosX(xVal) {
+  if(!pendingImage) return;
+  undoLastStroke();
+  pendingImgPos.x = parseFloat(xVal);
+  renderPendingImage();
+}
+
 function updatePhotoPosY(yVal) {
   if(!pendingImage) return;
   undoLastStroke();
@@ -1161,6 +1209,7 @@ function switchTab(tab) {
     if(resCount) resCount.style.display = "none";
     
     document.getElementById("moleskineSection").style.display = "block";
+    initMoleskineSelect();
     if(undoStack.length === 0) clearCanvas();
     renderMoleskineLibrary();
   }
@@ -1175,6 +1224,7 @@ function exitMoleskine() {
 
 function saveMoleskineNote() {
   const title = document.getElementById("moleskineTitleInput").value.trim() || `Nota Moleskine ${new Date().toLocaleDateString()}`;
+  const placeId = document.getElementById("moleskinePlaceSelect").value;
   const dataUrl = canvas.toDataURL("image/png");
 
   if(!currentActiveNoteId) {
@@ -1185,6 +1235,7 @@ function saveMoleskineNote() {
   const noteEntry = {
     id: currentActiveNoteId,
     title,
+    placeId,
     date: new Date().toLocaleString(),
     image: dataUrl,
     coords: currentCoords
@@ -1237,6 +1288,7 @@ function loadSavedNote(id) {
     ctx.drawImage(img, 0, 0);
     currentActiveNoteId = note.id;
     document.getElementById("moleskineTitleInput").value = note.title;
+    if(note.placeId) document.getElementById("moleskinePlaceSelect").value = note.placeId;
     if(note.coords) currentCoords = note.coords;
     alert(`Nota "${note.title}" cargada.`);
   };
