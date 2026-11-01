@@ -241,7 +241,56 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
   <div class="results-count" id="resultsCount">Cargando espacios...</div>
   <div id="contentArea"></div>
 </div>
+<!-- SECCIÓN NOTAS MOLESKINE -->
+<div id="moleskineSection" style="display:none; padding:15px; max-width:900px; margin:0 auto;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+    <h2 style="color:var(--accent); font-family:serif; margin:0;">📓 Cuaderno Moleskine</h2>
+    <button onclick="exitMoleskine()" style="background:#ef4444; color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:bold; cursor:pointer;">← Volver a la guía</button>
+  </div>
 
+  <!-- Barra de Herramientas de Dibujo / Acuarela -->
+  <div style="background:var(--panel); padding:10px; border-radius:8px; margin-bottom:10px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+    <button onclick="setTool('pen')" id="tool-pen" style="padding:6px 12px; border-radius:4px; border:none; background:var(--accent); color:#000; font-weight:bold;">✒️ Pluma</button>
+    <button onclick="setTool('watercolor')" id="tool-watercolor" style="padding:6px 12px; border-radius:4px; border:none; background:#333; color:#fff;">🎨 Acuarela Pastel</button>
+    <button onclick="setTool('eraser')" id="tool-eraser" style="padding:6px 12px; border-radius:4px; border:none; background:#333; color:#fff;">🧹 Goma</button>
+    
+    <div style="display:flex; gap:4px; align-items:center; margin-left:10px;">
+      <span style="font-size:12px; color:var(--text);">Paleta:</span>
+      <input type="color" id="colorPicker" value="#f4a261" onchange="customColor(this.value)" style="width:30px; height:30px; border:none; cursor:pointer;">
+      <button onclick="setColor('#f7a8b8')" style="background:#f7a8b8; width:25px; height:25px; border-radius:50%; border:1px solid #fff;"></button>
+      <button onclick="setColor('#a8dadc')" style="background:#a8dadc; width:25px; height:25px; border-radius:50%; border:1px solid #fff;"></button>
+      <button onclick="setColor('#e9c46a')" style="background:#e9c46a; width:25px; height:25px; border-radius:50%; border:1px solid #fff;"></button>
+      <button onclick="setColor('#b7e4c7')" style="background:#b7e4c7; width:25px; height:25px; border-radius:50%; border:1px solid #fff;"></button>
+    </div>
+
+    <select id="brushSize" onchange="setSize(this.value)" style="padding:6px; border-radius:4px; background:#222; color:#fff; border:1px solid #444;">
+      <option value="3">Fino</option>
+      <option value="12" selected>Medio (Acuarela)</option>
+      <option value="25">Ancho / Lavado</option>
+    </select>
+
+    <label style="background:#3b82f6; color:white; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold;">
+      📷 Foto + GPS
+      <input type="file" accept="image/*" capture="environment" onchange="handleFotoGPS(event)" style="display:none;">
+    </label>
+    <button onclick="clearCanvas()" style="padding:6px 12px; border-radius:4px; border:none; background:#555; color:#fff;">🗑️ Limpiar</button>
+  </div>
+
+  <!-- Lienzo Canvas estilo Moleskine -->
+  <div style="position:relative; width:100%; text-align:center;">
+    <canvas id="moleskineCanvas" width="800" height="600" style="background:#fcfbf7; border-radius:8px; border:1px solid #d1d5db; width:100%; max-width:100%; touch-action:none; box-shadow:0 4px 6px -1px rgba(0,0,0,0.3);"></canvas>
+  </div>
+
+  <!-- Campo de Texto y Agendar -->
+  <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+    <textarea id="moleskineText" placeholder="Escribe aquí tus impresiones o notas del lugar..." style="width:100%; height:80px; padding:10px; border-radius:6px; background:#111; color:#fff; border:1px solid #333;"></textarea>
+    <div style="display:flex; gap:10px;">
+      <button onclick="saveMoleskineNote()" style="flex:1; background:#4ade80; color:#000; font-weight:bold; padding:10px; border-radius:6px; border:none; cursor:pointer;">💾 Guardar Nota Moleskine</button>
+      <button id="btnCalendar" onclick="exportToCalendar()" style="display:none; background:#8b5cf6; color:#fff; font-weight:bold; padding:10px; border-radius:6px; border:none; cursor:pointer;">📅 Añadir a Google Calendar</button>
+    </div>
+    <div id="gpsStatus" style="font-size:12px; color:var(--muted); font-style:italic;"></div>
+  </div>
+</div>
 <div class="modal-overlay" id="scheduleModal">
   <div class="modal">
     <h3 id="modalPlaceTitle">Agendar evento</h3>
