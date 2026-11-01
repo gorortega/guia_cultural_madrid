@@ -141,8 +141,8 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
 .form-group textarea{height:160px;resize:vertical;line-height:1.4}
 .modal-buttons{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 
-/* ESTILOS MOLESKINE CON SCROLL INTERNO Y ZOOM HABILITADO */
-.moleskine-container{max-width:900px;margin:0 auto;background:#202c38;border-radius:12px;padding:15px;border:1px solid #3f5162;width:100%;box-sizing:border-box;}
+/* ESTILOS MOLESKINE AJUSTADOS Y ESTABLES SIN DESBORDAMIENTO */
+.moleskine-container{max-width:900px;margin:0 auto;background:#202c38;border-radius:12px;padding:15px;border:1px solid #3f5162;width:100%;box-sizing:border-box;overflow:hidden;}
 .moleskine-toolbar{background:#18212b;padding:10px;border-radius:8px;border:1px solid #3f5162;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:sticky;top:0;z-index:10;}
 .moleskine-tool-btn{padding:6px 12px;border-radius:6px;border:1px solid #3f5162;background:#263442;color:#fff;cursor:pointer;font-weight:bold;font-size:0.85rem}
 .moleskine-tool-btn.active{background:var(--accent);color:#000;border-color:#fff}
@@ -262,14 +262,11 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     </div>
   </div>
 
-  <div style="margin-bottom:10px; display:flex; gap:8px; flex-wrap:wrap;">
-    <input type="text" id="moleskineTitleInput" placeholder="Título de la nota (ej. Nota Prado)..." style="flex:1; min-width:200px; padding:7px 10px; border-radius:6px; border:1px solid #3f5162; background:#18212b; color:#fff; font-size:0.9rem;">
-    <select id="moleskinePlaceSelect" style="padding:7px; border-radius:6px; border:1px solid #3f5162; background:#18212b; color:#fff; font-size:0.9rem;">
-      <option value="">-- Vincular a un lugar --</option>
-    </select>
+  <div style="margin-bottom:10px;">
+    <input type="text" id="moleskineTitleInput" placeholder="Título de la nota (ej. Nota Prado)..." style="width:100%; padding:7px 10px; border-radius:6px; border:1px solid #3f5162; background:#18212b; color:#fff; font-size:0.9rem;">
   </div>
 
-  <!-- Barra de Herramientas (Botón Deshacer junto a Limpiar) -->
+  <!-- Barra de Herramientas -->
   <div class="moleskine-toolbar">
     <button onclick="setTool('pen')" id="tool-pen" class="moleskine-tool-btn active">✒️ Pluma</button>
     <button onclick="setTool('pencil')" id="tool-pencil" class="moleskine-tool-btn">✏️ Lápiz</button>
@@ -302,7 +299,7 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     <button onclick="clearCanvas()" class="moleskine-tool-btn" style="background:#ef4444;">🗑️ Limpiar</button>
   </div>
 
-  <!-- Controles completos de la Foto: Tamaño + Posición Horizontal (X) + Posición Vertical (Y) -->
+  <!-- Controles completos de la Foto -->
   <div id="photoControls" style="display:none; background:#18212b; padding:10px; border-radius:6px; margin-bottom:10px; align-items:center; gap:12px; border:1px solid #3f5162; flex-wrap:wrap;">
     <div style="display:flex; align-items:center; gap:6px;">
       <span style="font-size:0.8rem;">Tamaño:</span>
@@ -319,7 +316,7 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     <button onclick="confirmPhotoPlacement()" style="background:#10b981; border:none; color:#fff; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✓ Fijar Foto en el Papel</button>
   </div>
 
-  <!-- Contenedor del Folio con Scroll Interno e Infinito (3500px) -->
+  <!-- Contenedor del Folio con Scroll Interno e Infinito -->
   <div class="folio-wrapper" id="folioWrapper">
     <div class="canvas-inner-scaler" id="canvasScaler">
       <canvas id="moleskineCanvas" width="800" height="3500"></canvas>
@@ -437,7 +434,7 @@ const data = [
   {id:"t5",nombre:"Teatros del Canal",categoria:"teatros",condicion:"descuento-darde",badgeText:"Descuento DARDE",direccion:"Calle de Cea Bermúdez, 1",telefono:"913 08 99 99",web:"https://www.teatroscanal.com",precioGeneral:"15,00 € - 35,00 €",precioDARDE:"5,00 € dto directo en entrada",gratisGeneral:"No disponible",notas:"Complejo escénico de la Comunidad de Madrid con teatro, danza, música, circo y ópera.",imagenQuery:"Teatros del Canal Madrid exterior"},
   {id:"t6",nombre:"Auditorio Nacional de Música",categoria:"teatros",condicion:"descuento-darde",badgeText:"50% Descuento",direccion:"Calle del Príncipe de Vergara, 146",telefono:"913 37 01 40",web:"https://www.auditorionacional.mcu.es",precioGeneral:"15,00 € - 40,00 €",precioDARDE:"50% Dto en entradas del OCNE",gratisGeneral:"No disponible",notas:"Principal complejo sinfónico de Madrid y sede habitual de la Orquesta y Coro Nacionales de España.",imagenQuery:"Auditorio Nacional de Musica Madrid exterior"},
 
-  {id:"c1",nombre:"Cine Doré (Filmoteca Española)",categoria:"cines",condicion:"descuento-darde",badgeText:"Tarifa Reducida",direccion:"Calle de Santa Isabel, 3",telefono:"913 69 11 25",web:"https://www.cultura.gob.es/filmoteca",precioGeneral:"3,50 €",precioDARDE:"3,00 €",gratisGeneral:"No disponible",notas:"Histórico cine de la Filmoteca Española, con programación de cine clásico, de autor y retrospectivas.",imagenQuery:"Cine Doré Madrid exterior"},
+  {id:"c1",nombre:"Cine Doré (Filmoteca Española)",categoria:"cines",condicion:"descuento-darde",badgeText:"Tarifa Reducida",direccion:"Calle de Santa Isabel, 3",telefono:"913 69 11 25",web:"https://www.cultura.gob.es/filmoteca",precioGeneral:"3,50 €",precioDARDE:"3,00 €",gratisGeneral:"No disponible",notas:"Histórico cine de la Filmoteca Española, con programación de cine clásico, de autor y retrospectivas.",imagenQuery:"Cine Dore Madrid exterior"},
   {id:"c2",nombre:"Cineteca Madrid (Matadero)",categoria:"cines",condicion:"descuento-darde",badgeText:"Tarifa Reducida",direccion:"Plaza de Legazpi, 8",telefono:"914 17 93 83",web:"https://www.cinetecamadrid.com",precioGeneral:"3,50 €",precioDARDE:"3,00 €",gratisGeneral:"No disponible",notas:"Espacio dedicado al cine documental, independiente y de creación contemporánea en Matadero Madrid.",imagenQuery:"Cineteca Madrid Matadero exterior"},
   {id:"c3",nombre:"Casa de América (Sala Iberia)",categoria:"cines",condicion:"descuento-darde",badgeText:"1,00 € DARDE",direccion:"Plaza de la Cibeles, s/n",telefono:"915 95 48 00",web:"https://www.casamerica.es",precioGeneral:"5,00 €",precioDARDE:"1,00 €",gratisGeneral:"No disponible",notas:"Palacio de Linares y centro cultural dedicado a las relaciones entre España y América.",imagenQuery:"Casa de America Madrid exterior"},
   {id:"c4",nombre:"Sala Berlanga (SGAE)",categoria:"cines",condicion:"descuento-darde",badgeText:"Tarifa Reducida",direccion:"Calle de Andrés Mellado, 53",telefono:"914 46 07 70",web:"https://www.salaberlanga.com",precioGeneral:"3,50 €",precioDARDE:"2,00 €",gratisGeneral:"No disponible",notas:"Sala de cine de la Fundación SGAE con ciclos, muestras y cine español.",imagenQuery:"Sala Berlanga Madrid exterior"},
@@ -989,7 +986,7 @@ document.getElementById("userNotesModal").addEventListener("click",e=>{if(e.targ
 
 renderContent();
 
-/* ---------- LÓGICA MOLESKINE UNIFICADA Y MEJORADA CON ZOOM Y DIBUJO EXCLUSIVO PEN ---------- */
+/* ---------- LÓGICA MOLESKINE UNIFICADA Y MEJORADA CON CUADRÍCULA Y ZOOM ---------- */
 let canvas = document.getElementById("moleskineCanvas");
 let ctx = canvas ? canvas.getContext("2d") : null;
 let isDrawing = false;
@@ -1004,15 +1001,30 @@ let pendingImage = null;
 let pendingImgPos = { x: 50, y: 100, width: 350, height: 250 };
 let maxYWritten = 50;
 
-function initMoleskineSelect() {
-  const select = document.getElementById("moleskinePlaceSelect");
-  if(!select || select.options.length > 1) return;
-  data.forEach(p => {
-    const opt = document.createElement("option");
-    opt.value = p.id;
-    opt.textContent = p.nombre;
-    select.appendChild(opt);
-  });
+function drawGridBackground() {
+  if(!ctx || !canvas) return;
+  ctx.save();
+  ctx.fillStyle = "#fcfbf7";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Cuadrícula muy tenue (punteada/suave) para proporciones
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.04)";
+  ctx.lineWidth = 1;
+  
+  const gridSize = 30;
+  for(let x = 0; x < canvas.width; x += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+  for(let y = 0; y < canvas.height; y += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function saveCanvasState() {
@@ -1073,7 +1085,7 @@ if(canvas) {
 }
 
 function startDrawing(e) {
-  // Exclusivo para lápiz (pen) o ratón (mouse). Permite scroll/zoom libre con los dedos.
+  // Exclusivo para lápiz/stylus o ratón. Permite scroll/zoom libre con los dedos en táctil.
   if(!ctx || (e.pointerType !== "pen" && e.pointerType !== "mouse")) return;
   saveCanvasState();
   isDrawing = true;
@@ -1113,15 +1125,13 @@ function stopDrawing(e) {
 function clearCanvas() {
   if(!ctx || !canvas) return;
   saveCanvasState();
-  ctx.fillStyle = "#fcfbf7";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  drawGridBackground();
   maxYWritten = 50;
 }
 
 function startNewNote() {
   currentActiveNoteId = null;
   document.getElementById("moleskineTitleInput").value = "";
-  document.getElementById("moleskinePlaceSelect").value = "";
   currentCoords = null;
   undoStack = [];
   clearCanvas();
@@ -1212,7 +1222,6 @@ function switchTab(tab) {
     if(resCount) resCount.style.display = "none";
     
     document.getElementById("moleskineSection").style.display = "block";
-    initMoleskineSelect();
     if(undoStack.length === 0) clearCanvas();
     renderMoleskineLibrary();
   }
@@ -1227,7 +1236,6 @@ function exitMoleskine() {
 
 function saveMoleskineNote() {
   const title = document.getElementById("moleskineTitleInput").value.trim() || `Nota Moleskine ${new Date().toLocaleDateString()}`;
-  const placeId = document.getElementById("moleskinePlaceSelect").value;
   const dataUrl = canvas.toDataURL("image/png");
 
   if(!currentActiveNoteId) {
@@ -1238,7 +1246,6 @@ function saveMoleskineNote() {
   const noteEntry = {
     id: currentActiveNoteId,
     title,
-    placeId,
     date: new Date().toLocaleString(),
     image: dataUrl,
     coords: currentCoords
@@ -1288,10 +1295,10 @@ function loadSavedNote(id) {
   img.onload = function() {
     saveCanvasState();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawGridBackground();
     ctx.drawImage(img, 0, 0);
     currentActiveNoteId = note.id;
     document.getElementById("moleskineTitleInput").value = note.title;
-    if(note.placeId) document.getElementById("moleskinePlaceSelect").value = note.placeId;
     if(note.coords) currentCoords = note.coords;
     alert(`Nota "${note.title}" cargada.`);
   };
@@ -1311,6 +1318,11 @@ function exportToCalendar() {
   const title = encodeURIComponent("📓 " + titleText);
   const details = encodeURIComponent(`Nota Moleskine\n\n${gpsText}`);
   window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}`, '_blank');
+}
+
+// Inicializar la cuadrícula del canvas al cargar
+if(ctx) {
+  drawGridBackground();
 }
 </script>
 </body>
