@@ -941,6 +941,143 @@ document.getElementById("scheduleModal").addEventListener("click",e=>{if(e.targe
 document.getElementById("userNotesModal").addEventListener("click",e=>{if(e.target.id==="userNotesModal")closeUserNotesModal()});
 
 renderContent();
+let canvas = document.getElementById("moleskineCanvas");
+let ctx = canvas ? canvas.getContext("2d") : null;
+let isDrawing = false;
+let currentTool = "pen";
+let currentColor = "#000000";
+let currentSize = 12;
+let currentCoords = null;
+
+function setTool(tool) {
+  currentTool = tool;
+  document.getElementById("tool-pen").style.background = tool === 'pen' ? 'var(--accent)' : '#333';
+  document.getElementById("tool-watercolor").style.background = tool === 'watercolor' ? 'var(--accent)' : '#333';
+  document.getElementById("tool-eraser").style.background = tool === 'eraser' ? 'var(--accent)' : '#333';
+  
+  if(tool === 'pen') {
+    currentColor = "#000000";
+    ctx.globalAlpha = 1.0;
+  } else if(tool === 'watercolor') {
+    currentColor = "#f7a8b8"; 
+    ctx.globalAlpha = 0.25;  
+  } else if(tool === 'eraser') {
+    ctx.globalAlpha = 1.0;
+  }
+}
+
+function setColor(color) {
+  currentColor = color;
+  if(currentTool === 'watercolor') ctx.globalAlpha = 0.25;
+}
+
+function customColor(color) {
+  currentColor = color;
+  if(currentTool === 'watercolor') ctx.globalAlpha = 0.25;
+}
+
+function setSize(size) {
+  currentSize = size;
+}
+
+if(canvas) {
+  canvas.addEventListener("pointerdown", startDrawing);
+  canvas.addEventListener("pointermove", draw);
+  canvas.addEventListener("pointerup", stopDrawing);
+  canvas.addEventListener("pointerleave", stopDrawing);
+}
+
+function startDrawing(e) {
+  isDrawing = true;
+  ctx.beginPath();
+  const rect = canvas.getBoundingClientRect();
+  ctx.moveTo((e.clientX - rect.left) * (canvas.width / rect.width), (e.clientY - rect.top) * (canvas.height / rect.height));
+}
+
+function draw(e) {
+  if(!isDrawing) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+  ctx.lineWidth = currentSize;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  if(currentTool === 'eraser') {
+    ctx.strokeStyle = "#fcfbf7"; 
+  } else {
+    ctx.strokeStyle = currentColor;
+  }
+
+  ctx.lineTo(x, y);
+  ctx.stroke();
+}
+
+function stopDrawing() {
+  isDrawing = false;
+}
+
+function clearCanvas() {
+  ctx.fillStyle = "#fcfbf7";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function handleFotoGPS(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+
+  if (navigator.geolocation) {
+    document.getElementById("gpsStatus").innerText = "Obteniendo GPS...";
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        currentCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        document.getElementById("gpsStatus").innerText = `📍 Ubicación guardada: ${currentCoords.lat.toFixed(5)}, ${currentCoords.lng.toFixed(5)}`;
+        document.getElementById("btnCalendar").style.display = "block";
+      },
+      () => { document.getElementById("gpsStatus").innerText = "📍 GPS no disponible."; }
+    );
+  }
+}
+
+function switchTab(tab) {
+  if(tab === 'moleskine') {
+    document.getElementById("contentArea").style.display = "none";
+    // Ocultar resultados y contadores si los hay de otras pestañas
+    const resCount = document.getElementById("resultsCount");
+    if(resCount) resCount.style.display = "none";
+    
+    document.getElementById("moleskineSection").style.display = "block";
+    clearCanvas();
+  }
+}
+
+function exitMoleskine() {
+  document.getElementById("moleskineSection").style.display = "none";
+  document.getElementById("contentArea").style.display = "block";
+  const resCount = document.getElementById("resultsCount");
+  if(resCount) resCount.style.display = "block";
+}
+
+function exportToCalendar() {
+  const text = document.getElementById("moleskineText").value || "Nota Moleskine";
+  const gpsText = currentCoords ? `GPS: https://maps.google.com/?q=${currentCoords.lat},${currentCoords.lng}` : "";
+  const title = encodeURIComponent("📓 Moleskine: " + text.substring(0, 30));
+  const details = encodeURIComponent(`${text}\n\n${gpsText}`);
+  
+  const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}`;
+  window.open(gcalUrl, '_blank');
+}
 </script>
 </body>
 </html>
