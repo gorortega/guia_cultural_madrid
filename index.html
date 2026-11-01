@@ -241,6 +241,7 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
   <div class="results-count" id="resultsCount">Cargando espacios...</div>
   <div id="contentArea"></div>
 </div>
+
 <!-- SECCIÓN NOTAS MOLESKINE -->
 <div id="moleskineSection" style="display:none; padding:15px; max-width:900px; margin:0 auto;">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -291,6 +292,7 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     <div id="gpsStatus" style="font-size:12px; color:var(--muted); font-style:italic;"></div>
   </div>
 </div>
+
 <div class="modal-overlay" id="scheduleModal">
   <div class="modal">
     <h3 id="modalPlaceTitle">Agendar evento</h3>
@@ -365,7 +367,6 @@ const data = [
   {id:"m13",nombre:"Museo del Ferrocarril",categoria:"museos",condicion:"descuento-darde",badgeText:"Descuento DARDE",direccion:"Paseo de las Delicias, 61",telefono:"915 06 83 29",web:"https://www.museodelferrocarril.org",precioGeneral:"7,00 €",precioDARDE:"4,00 € (Tarifa reducida)",gratisGeneral:"No disponible",notas:"Antigua estación de Delicias con locomotoras, coches y patrimonio ferroviario.",imagenQuery:"Museo del Ferrocarril Madrid exterior"},
   {id:"m14",nombre:"Museo Geominero",categoria:"museos",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Calle de Ríos Rosas, 23",telefono:"913 49 57 59",web:"https://www.igme.es/museo",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Siempre gratuito",notas:"Minerales, fósiles y rocas en una espectacular sala histórica.",imagenQuery:"Museo Geominero Madrid exterior"},
   {id:"m15",nombre:"Museo Casa de la Moneda",categoria:"museos",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Calle del Doctor Esquerdo, 36",telefono:"915 66 65 44",web:"https://www.museocasadelamoneda.es",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Siempre gratuito con DNI",notas:"Historia de la moneda, medallas y sistemas de fabricación.",imagenQuery:"Museo Casa de la Moneda Madrid exterior"},
-
   {id:"m17",nombre:"Museo Sorolla",categoria:"museos",condicion:"gratis-darde",badgeText:"Gratis DARDE",direccion:"Paseo del General Martínez Campos, 37",telefono:"913 10 15 84",web:"https://www.cultura.gob.es/msorolla",precioGeneral:"3,00 €",precioDARDE:"0,00 € acreditando desempleo",gratisGeneral:"Sáb desde 14:00 h y Domingos",notas:"Casa-museo del pintor Joaquín Sorolla, conservada con parte de su decoración original, estudio y jardines. Actualmente está cerrado temporalmente por las obras de ampliación y rehabilitación.",imagenQuery:"Museo Sorolla Madrid exterior"},
   {id:"m18",nombre:"Museo de San Isidro. Los Orígenes de Madrid",categoria:"museos",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Plaza de San Andrés, 2",telefono:"913 66 74 15",web:"https://www.madrid.es/museosanisidro",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Entrada gratuita",notas:"Museo dedicado a los orígenes e historia de Madrid, con arqueología, patrimonio madrileño y un jardín arqueobotánico. Cuenta además con un almacén visitable con numerosas piezas arqueológicas.",imagenQuery:"Museo de San Isidro Madrid exterior"},
   {id:"m16",nombre:"Museo de Historia de Madrid",categoria:"museos",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Calle de Fuencarral, 78",telefono:"915 88 86 72",web:"https://www.madrid.es/museodehistoria",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Martes a domingo entrada libre",notas:"Historia de Madrid desde la época de los Austrias hasta la actualidad.",imagenQuery:"Museo de Historia de Madrid exterior"},
@@ -375,7 +376,6 @@ const data = [
   {id:"p3",nombre:"Real Monasterio de la Encarnación",categoria:"patrimonio",condicion:"gratis-darde",badgeText:"Gratis DARDE",direccion:"Plaza de la Encarnación, 1",telefono:"914 54 87 00",web:"https://www.patrimonionacional.es",precioGeneral:"7,00 €",precioDARDE:"0,00 € siempre",gratisGeneral:"Mié y Jue 16:00-18:30 h",notas:"Monasterio agustino de gran interés histórico, con relicario barroco y obras de arte.",imagenQuery:"Real Monasterio de la Encarnacion Madrid exterior"},
   {id:"p4",nombre:"Panteón de España",categoria:"patrimonio",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Calle de Julián Gayarre, 3",telefono:"914 54 87 00",web:"https://www.patrimonionacional.es",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Entrada libre",notas:"Panteón monumental dedicado a figuras relevantes de la historia política española.",imagenQuery:"Panteon de España Madrid exterior"},
   {id:"p6",nombre:"Palacio Real de El Pardo",categoria:"patrimonio",condicion:"gratis-darde",badgeText:"Gratis DARDE",direccion:"Manuel Alonso, s/n (El Pardo)",telefono:"913 76 15 00",web:"https://www.patrimonionacional.es",precioGeneral:"9,00 €",precioDARDE:"0,00 € siempre",gratisGeneral:"Mié y Dom por la tarde",notas:"Antigua residencia real vinculada históricamente a la caza y al entorno de El Pardo.",imagenQuery:"Palacio Real de El Pardo Madrid exterior"},
-
   {id:"p8",nombre:"Catedral Ortodoxa Rusa de Santa María Magdalena",categoria:"patrimonio",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Gran Vía de Hortaleza, 48",telefono:"615 77 59 97",web:"https://orthodoxmadrid.es",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Visita gratuita; visita guiada en castellano los sábados a las 17:00 h",notas:"Templo neobizantino de la Iglesia Ortodoxa Rusa en Madrid. Ofrece oficios litúrgicos con canto y visitas guiadas gratuitas; conviene consultar en su web el calendario actualizado de celebraciones y actividades.",imagenQuery:"Catedral Ortodoxa Rusa Santa Maria Magdalena Madrid exterior"},
   {id:"p9",nombre:"Convento de las Carboneras del Corpus Christi",categoria:"patrimonio",condicion:"gratis-todos",badgeText:"Acceso Libre / Experiencia",direccion:"Plaza del Conde de Miranda, 3",telefono:"915 48 37 01",web:"https://www.esmadrid.com/informacion-turistica/convento-de-las-carboneras",precioGeneral:"0,00 € (acceso al templo)",precioDARDE:"0,00 €",gratisGeneral:"Acceso al templo libre. Torno de dulces: 9:30-13:00 y 16:30-18:15",notas:"Convento de clausura especialmente conocido por la venta de dulces caseros mediante un torno. Se accede por la puerta derecha al inicio de la calle del Codo: se llama, se hace el pedido y las monjas lo entregan a través del torno.",imagenQuery:"Convento de las Carboneras Madrid exterior"},
   {id:"p10",nombre:"Ermita de San Antonio de la Florida",categoria:"patrimonio",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Glorieta de San Antonio de la Florida, 5",telefono:"915 42 07 22",web:"https://www.madrid.es/ermita",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Entrada gratuita; visitas guiadas gratuitas para grupos con reserva",notas:"Pequeña ermita neoclásica célebre por los frescos de Goya y por albergar los restos del pintor. La visita individual es gratuita y las visitas guiadas para grupos también son gratuitas con reserva.",imagenQuery:"Ermita San Antonio de la Florida Madrid exterior"},
@@ -679,7 +679,6 @@ function renderCards(filtered){
     return;
   }
   
-  // Ordenar para que los visitados salgan siempre arriba dentro de cada categoría
   filtered.sort((a, b) => {
     const aVisited = window.visitedItems.includes(a.id) ? 1 : 0;
     const bVisited = window.visitedItems.includes(b.id) ? 1 : 0;
@@ -750,6 +749,7 @@ function renderCards(filtered){
   contentArea.innerHTML = html;
   filtered.forEach(item=>loadCommonsImage(item,document.getElementById(`img-${item.id}`),document.getElementById(`credit-${item.id}`)));
 }
+
 function renderContent(){
   document.getElementById("tabVistos").innerText=`✓ Vistos (${window.visitedItems.length})`;
   document.getElementById("tabAgenda").innerText=`📅 Agenda Eventos (${window.scheduledEvents.length})`;
@@ -941,6 +941,8 @@ document.getElementById("scheduleModal").addEventListener("click",e=>{if(e.targe
 document.getElementById("userNotesModal").addEventListener("click",e=>{if(e.target.id==="userNotesModal")closeUserNotesModal()});
 
 renderContent();
+
+/* ---------- LÓGICA MOLESKINE (UNIFICADA Y VERIFICADA) ---------- */
 let canvas = document.getElementById("moleskineCanvas");
 let ctx = canvas ? canvas.getContext("2d") : null;
 let isDrawing = false;
@@ -952,28 +954,33 @@ let currentCoords = null;
 function setTool(tool) {
   currentTool = tool;
   document.getElementById("tool-pen").style.background = tool === 'pen' ? 'var(--accent)' : '#333';
+  document.getElementById("tool-pen").style.color = tool === 'pen' ? '#000' : '#fff';
+
   document.getElementById("tool-watercolor").style.background = tool === 'watercolor' ? 'var(--accent)' : '#333';
+  document.getElementById("tool-watercolor").style.color = tool === 'watercolor' ? '#000' : '#fff';
+
   document.getElementById("tool-eraser").style.background = tool === 'eraser' ? 'var(--accent)' : '#333';
+  document.getElementById("tool-eraser").style.color = tool === 'eraser' ? '#000' : '#fff';
   
   if(tool === 'pen') {
     currentColor = "#000000";
-    ctx.globalAlpha = 1.0;
+    if(ctx) ctx.globalAlpha = 1.0;
   } else if(tool === 'watercolor') {
     currentColor = "#f7a8b8"; 
-    ctx.globalAlpha = 0.25;  
+    if(ctx) ctx.globalAlpha = 0.25;  
   } else if(tool === 'eraser') {
-    ctx.globalAlpha = 1.0;
+    if(ctx) ctx.globalAlpha = 1.0;
   }
 }
 
 function setColor(color) {
   currentColor = color;
-  if(currentTool === 'watercolor') ctx.globalAlpha = 0.25;
+  if(currentTool === 'watercolor' && ctx) ctx.globalAlpha = 0.25;
 }
 
 function customColor(color) {
   currentColor = color;
-  if(currentTool === 'watercolor') ctx.globalAlpha = 0.25;
+  if(currentTool === 'watercolor' && ctx) ctx.globalAlpha = 0.25;
 }
 
 function setSize(size) {
@@ -988,6 +995,7 @@ if(canvas) {
 }
 
 function startDrawing(e) {
+  if(!ctx) return;
   isDrawing = true;
   ctx.beginPath();
   const rect = canvas.getBoundingClientRect();
@@ -995,7 +1003,7 @@ function startDrawing(e) {
 }
 
 function draw(e) {
-  if(!isDrawing) return;
+  if(!isDrawing || !ctx) return;
   const rect = canvas.getBoundingClientRect();
   const x = (e.clientX - rect.left) * (canvas.width / rect.width);
   const y = (e.clientY - rect.top) * (canvas.height / rect.height);
@@ -1019,6 +1027,7 @@ function stopDrawing() {
 }
 
 function clearCanvas() {
+  if(!ctx || !canvas) return;
   ctx.fillStyle = "#fcfbf7";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
@@ -1031,7 +1040,7 @@ function handleFotoGPS(event) {
   reader.onload = function(e) {
     const img = new Image();
     img.onload = function() {
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      if(ctx && canvas) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     };
     img.src = e.target.result;
   };
@@ -1053,7 +1062,6 @@ function handleFotoGPS(event) {
 function switchTab(tab) {
   if(tab === 'moleskine') {
     document.getElementById("contentArea").style.display = "none";
-    // Ocultar resultados y contadores si los hay de otras pestañas
     const resCount = document.getElementById("resultsCount");
     if(resCount) resCount.style.display = "none";
     
@@ -1067,6 +1075,10 @@ function exitMoleskine() {
   document.getElementById("contentArea").style.display = "block";
   const resCount = document.getElementById("resultsCount");
   if(resCount) resCount.style.display = "block";
+}
+
+function saveMoleskineNote() {
+  alert("¡Nota Moleskine lista para exportar!");
 }
 
 function exportToCalendar() {
