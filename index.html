@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
 <title>Guía Cultural de Madrid</title>
 <style>
 :root{
@@ -14,7 +14,6 @@
   --line:#40505e;
   --accent:#9fc5e8;
 
-  /* Paleta pastel por categoría */
   --museos-bg:#3b3038; --museos-line:#d7a9ba; --museos-tag:#efd5df; --museos-text:#513746;
   --patrimonio-bg:#3d392c; --patrimonio-line:#dbc88f; --patrimonio-tag:#f2e8bd; --patrimonio-text:#514829;
   --teatros-bg:#363143; --teatros-line:#c7b1dc; --teatros-tag:#e5d8f0; --teatros-text:#4b3c5a;
@@ -142,13 +141,14 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
 .form-group textarea{height:160px;resize:vertical;line-height:1.4}
 .modal-buttons{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 
-/* ESTILOS MOLESKINE CON SCROLL INTERNO CONTINUO */
+/* ESTILOS MOLESKINE CON SCROLL INTERNO Y ZOOM HABILITADO */
 .moleskine-container{max-width:900px;margin:0 auto;background:#202c38;border-radius:12px;padding:15px;border:1px solid #3f5162;width:100%;box-sizing:border-box;}
 .moleskine-toolbar{background:#18212b;padding:10px;border-radius:8px;border:1px solid #3f5162;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:sticky;top:0;z-index:10;}
 .moleskine-tool-btn{padding:6px 12px;border-radius:6px;border:1px solid #3f5162;background:#263442;color:#fff;cursor:pointer;font-weight:bold;font-size:0.85rem}
 .moleskine-tool-btn.active{background:var(--accent);color:#000;border-color:#fff}
-.folio-wrapper{background:#fcfbf7;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);overflow-y:auto;max-height:75vh;border:1px solid #dcd6cd;position:relative;width:100%;}
-#moleskineCanvas{display:block;margin:0 auto;background:#fcfbf7;touch-action:none;cursor:crosshair;width:100%;max-width:800px;height:auto;}
+.folio-wrapper{background:#202c38;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);overflow:auto;max-height:80vh;border:1px solid #3f5162;position:relative;width:100%;touch-action:pan-x pan-y pinch-zoom;}
+.canvas-inner-scaler{transform-origin:0 0;display:inline-block;background:#fcfbf7;}
+#moleskineCanvas{display:block;background:#fcfbf7;touch-action:none;cursor:crosshair;}
 .saved-notes-list{margin-top:15px;background:#18212b;padding:12px;border-radius:8px;border:1px solid #3f5162}
 .saved-note-card{background:#263442;padding:10px 12px;border-radius:6px;border:1px solid #3f5162;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
 
@@ -269,13 +269,12 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     </select>
   </div>
 
-  <!-- Barra de Herramientas -->
+  <!-- Barra de Herramientas (Botón Deshacer junto a Limpiar) -->
   <div class="moleskine-toolbar">
     <button onclick="setTool('pen')" id="tool-pen" class="moleskine-tool-btn active">✒️ Pluma</button>
     <button onclick="setTool('pencil')" id="tool-pencil" class="moleskine-tool-btn">✏️ Lápiz</button>
     <button onclick="setTool('watercolor')" id="tool-watercolor" class="moleskine-tool-btn">🖌️ Pincel Acuarela</button>
     <button onclick="setTool('eraser')" id="tool-eraser" class="moleskine-tool-btn">🧹 Goma</button>
-    <button onclick="undoLastStroke()" class="moleskine-tool-btn" style="background:#4b5563;">↩️ Deshacer</button>
     
     <div style="display:flex; gap:4px; align-items:center;">
       <input type="color" id="colorPicker" value="#000000" onchange="customColor(this.value)" style="width:26px; height:26px; border:none; cursor:pointer; background:none;">
@@ -294,10 +293,12 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
       <option value="28">Brocha Acuarela</option>
     </select>
 
-    <label style="background:#3b82f6; color:white; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.8rem;">
+    <label style="background:#3b82f6; color:white; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.80rem;">
       📷 Foto + GPS
       <input type="file" accept="image/*" capture="environment" onchange="handleFotoGPS(event)" style="display:none;">
     </label>
+
+    <button onclick="undoLastStroke()" class="moleskine-tool-btn" style="background:#4b5563;">↩️ Deshacer</button>
     <button onclick="clearCanvas()" class="moleskine-tool-btn" style="background:#ef4444;">🗑️ Limpiar</button>
   </div>
 
@@ -313,14 +314,16 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     </div>
     <div style="display:flex; align-items:center; gap:6px;">
       <span style="font-size:0.8rem;">Posición Y (Vert.):</span>
-      <input type="range" id="photoPosY" min="10" max="2200" step="10" value="100" oninput="updatePhotoPosY(this.value)">
+      <input type="range" id="photoPosY" min="10" max="3200" step="10" value="100" oninput="updatePhotoPosY(this.value)">
     </div>
     <button onclick="confirmPhotoPlacement()" style="background:#10b981; border:none; color:#fff; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✓ Fijar Foto en el Papel</button>
   </div>
 
-  <!-- Contenedor del Folio con Scroll Interno -->
+  <!-- Contenedor del Folio con Scroll Interno e Infinito (3500px) -->
   <div class="folio-wrapper" id="folioWrapper">
-    <canvas id="moleskineCanvas" width="800" height="2500"></canvas>
+    <div class="canvas-inner-scaler" id="canvasScaler">
+      <canvas id="moleskineCanvas" width="800" height="3500"></canvas>
+    </div>
   </div>
 
   <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
@@ -986,7 +989,7 @@ document.getElementById("userNotesModal").addEventListener("click",e=>{if(e.targ
 
 renderContent();
 
-/* ---------- LÓGICA MOLESKINE CON DIBUJO SÓLO CON PEN Y FOTO X/Y/ESCALA ---------- */
+/* ---------- LÓGICA MOLESKINE UNIFICADA Y MEJORADA CON ZOOM Y DIBUJO EXCLUSIVO PEN ---------- */
 let canvas = document.getElementById("moleskineCanvas");
 let ctx = canvas ? canvas.getContext("2d") : null;
 let isDrawing = false;
@@ -1070,7 +1073,7 @@ if(canvas) {
 }
 
 function startDrawing(e) {
-  // Sólo se permite pintar con Pen (Lápiz táctil / S Pen) o Mouse. Se ignora el toque con 1 o 2 dedos.
+  // Exclusivo para lápiz (pen) o ratón (mouse). Permite scroll/zoom libre con los dedos.
   if(!ctx || (e.pointerType !== "pen" && e.pointerType !== "mouse")) return;
   saveCanvasState();
   isDrawing = true;
