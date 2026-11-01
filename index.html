@@ -14,7 +14,6 @@
   --line:#40505e;
   --accent:#9fc5e8;
 
-  /* Paleta pastel por categoría */
   --museos-bg:#3b3038; --museos-line:#d7a9ba; --museos-tag:#efd5df; --museos-text:#513746;
   --patrimonio-bg:#3d392c; --patrimonio-line:#dbc88f; --patrimonio-tag:#f2e8bd; --patrimonio-text:#514829;
   --teatros-bg:#363143; --teatros-line:#c7b1dc; --teatros-tag:#e5d8f0; --teatros-text:#4b3c5a;
@@ -28,7 +27,7 @@
 
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 body{background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:60px}
-button,input,textarea{font:inherit}
+button,input,textarea,select{font:inherit}
 header{background:#202c38;padding:24px 18px;text-align:center;border-bottom:3px solid #8fb8da}
 header h1{font-size:1.8rem;margin-bottom:7px}
 header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
@@ -142,6 +141,16 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
 .form-group textarea{height:160px;resize:vertical;line-height:1.4}
 .modal-buttons{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 
+/* ESTILOS ESPECÍFICOS CUADERNO MOLESKINE FOLIO A4 */
+.moleskine-container{max-width:850px;margin:0 auto;background:#202c38;border-radius:12px;padding:18px;border:1px solid #3f5162}
+.moleskine-toolbar{background:#18212b;padding:12px;border-radius:8px;border:1px solid #3f5162;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.moleskine-tool-btn{padding:7px 11px;border-radius:6px;border:1px solid #3f5162;background:#263442;color:#fff;cursor:pointer;font-weight:bold;font-size:0.82rem}
+.moleskine-tool-btn.active{background:var(--accent);color:#000;border-color:#fff}
+.folio-wrapper{background:#fcfbf7;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,0.4);overflow-y:auto;max-height:800px;border:1px solid #dcd6cd;position:relative}
+#moleskineCanvas{display:block;margin:0 auto;background:#fcfbf7;touch-action:none;cursor:crosshair}
+.saved-notes-list{margin-top:20px;background:#18212b;padding:14px;border-radius:8px;border:1px solid #3f5162}
+.saved-note-card{background:#263442;padding:10px 14px;border-radius:6px;border:1px solid #3f5162;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+
 @media(max-width:760px){
   .grid{grid-template-columns:1fr}
   .calendar,.week-view{font-size:.7rem}
@@ -149,19 +158,9 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
   .week-day{min-height:280px;padding:5px}
   .event-chip{font-size:.66rem}
 }
-@media(max-width:600px){
-  header h1{font-size:1.45rem}
-  .card-footer{flex-direction:column}
-  .btn-action{width:100%}
-  .calendar{overflow:hidden}
-  .weekday{font-size:.68rem}
-  .day-cell{min-height:72px}
-  .day-number{font-size:.7rem}
-  .agenda-toolbar{align-items:flex-start}
-}
 </style>
 
-<!-- Módulos SDK de Firebase con tus credenciales integradas -->
+<!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -203,6 +202,13 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     localStorage.setItem("user_place_notes_madrid", JSON.stringify(window.userNotes));
     if (typeof renderContent === "function") renderContent();
   });
+
+  onValue(ref(db, 'moleskine_saved_notes'), (snapshot) => {
+    const val = snapshot.val();
+    window.moleskineLibrary = val ? val : [];
+    localStorage.setItem("moleskine_saved_notes", JSON.stringify(window.moleskineLibrary));
+    if (typeof renderMoleskineLibrary === "function") renderMoleskineLibrary();
+  });
 </script>
 </head>
 <body>
@@ -242,54 +248,76 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
   <div id="contentArea"></div>
 </div>
 
-<!-- SECCIÓN NOTAS MOLESKINE -->
-<div id="moleskineSection" style="display:none; padding:15px; max-width:900px; margin:0 auto;">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+<!-- SECCIÓN NOTAS MOLESKINE FOLIO A4 -->
+<div id="moleskineSection" style="display:none;" class="moleskine-container">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
     <h2 style="color:var(--accent); font-family:serif; margin:0;">📓 Cuaderno Moleskine</h2>
-    <button onclick="exitMoleskine()" style="background:#ef4444; color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:bold; cursor:pointer;">← Volver a la guía</button>
+    <button onclick="exitMoleskine()" style="background:#ef4444; color:white; border:none; padding:8px 14px; border-radius:6px; font-weight:bold; cursor:pointer;">← Volver a la guía</button>
   </div>
 
-  <!-- Barra de Herramientas de Dibujo / Acuarela -->
-  <div style="background:var(--panel); padding:10px; border-radius:8px; margin-bottom:10px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
-    <button onclick="setTool('pen')" id="tool-pen" style="padding:6px 12px; border-radius:4px; border:none; background:var(--accent); color:#000; font-weight:bold;">✒️ Pluma</button>
-    <button onclick="setTool('watercolor')" id="tool-watercolor" style="padding:6px 12px; border-radius:4px; border:none; background:#333; color:#fff;">🎨 Acuarela Pastel</button>
-    <button onclick="setTool('eraser')" id="tool-eraser" style="padding:6px 12px; border-radius:4px; border:none; background:#333; color:#fff;">🧹 Goma</button>
-    
-    <div style="display:flex; gap:4px; align-items:center; margin-left:10px;">
-      <span style="font-size:12px; color:var(--text);">Paleta:</span>
-      <input type="color" id="colorPicker" value="#f4a261" onchange="customColor(this.value)" style="width:30px; height:30px; border:none; cursor:pointer;">
-      <button onclick="setColor('#f7a8b8')" style="background:#f7a8b8; width:25px; height:25px; border-radius:50%; border:1px solid #fff;"></button>
-      <button onclick="setColor('#a8dadc')" style="background:#a8dadc; width:25px; height:25px; border-radius:50%; border:1px solid #fff;"></button>
-      <button onclick="setColor('#e9c46a')" style="background:#e9c46a; width:25px; height:25px; border-radius:50%; border:1px solid #fff;"></button>
-      <button onclick="setColor('#b7e4c7')" style="background:#b7e4c7; width:25px; height:25px; border-radius:50%; border:1px solid #fff;"></button>
+  <div style="margin-bottom:12px; display:flex; gap:10px;">
+    <input type="text" id="moleskineTitleInput" placeholder="Título de la nota (ej. Estación de Atocha - Nota 1)..." style="flex:1; padding:8px 12px; border-radius:6px; border:1px solid #3f5162; background:#18212b; color:#fff;">
+    <select id="moleskinePlaceSelect" style="padding:8px; border-radius:6px; border:1px solid #3f5162; background:#18212b; color:#fff;">
+      <option value="">-- Vincular a un lugar (opcional) --</option>
+    </select>
+  </div>
+
+  <!-- Barra de Herramientas -->
+  <div class="moleskine-toolbar">
+    <button onclick="setTool('pen')" id="tool-pen" class="moleskine-tool-btn active">🖊️ Bolígrafo</button>
+    <button onclick="setTool('marker')" id="tool-marker" class="moleskine-tool-btn">🖊️ Rotulador</button>
+    <button onclick="setTool('pencil')" id="tool-pencil" class="moleskine-tool-btn">✏️ Lápiz / Carboncillo</button>
+    <button onclick="setTool('watercolor')" id="tool-watercolor" class="moleskine-tool-btn">🎨 Acuarela</button>
+    <button onclick="setTool('highlighter')" id="tool-highlighter" class="moleskine-tool-btn">🖍️ Fluorescente</button>
+    <button onclick="setTool('eraser')" id="tool-eraser" class="moleskine-tool-btn">🧹 Goma</button>
+    <button onclick="undoLastStroke()" class="moleskine-tool-btn" style="background:#4b5563;">↩️ Deshacer</button>
+
+    <div style="display:flex; gap:5px; align-items:center; margin-left:5px;">
+      <input type="color" id="moleskineColorPicker" value="#000000" onchange="customColor(this.value)" style="width:28px; height:28px; border:none; cursor:pointer; background:none;">
+      <button onclick="setColor('#000000')" style="background:#000000; width:22px; height:22px; border-radius:50%; border:1px solid #fff;"></button>
+      <button onclick="setColor('#2563eb')" style="background:#2563eb; width:22px; height:22px; border-radius:50%; border:1px solid #fff;"></button>
+      <button onclick="setColor('#dc2626')" style="background:#dc2626; width:22px; height:22px; border-radius:50%; border:1px solid #fff;"></button>
+      <button onclick="setColor('#f59e0b')" style="background:#f59e0b; width:22px; height:22px; border-radius:50%; border:1px solid #fff;"></button>
+      <button onclick="setColor('#10b981')" style="background:#10b981; width:22px; height:22px; border-radius:50%; border:1px solid #fff;"></button>
     </div>
 
-    <select id="brushSize" onchange="setSize(this.value)" style="padding:6px; border-radius:4px; background:#222; color:#fff; border:1px solid #444;">
-      <option value="3">Fino</option>
-      <option value="12" selected>Medio (Acuarela)</option>
-      <option value="25">Ancho / Lavado</option>
+    <select id="moleskineSize" onchange="setSize(this.value)" style="padding:5px; border-radius:4px; background:#263442; color:#fff; border:1px solid #3f5162;">
+      <option value="2">Grosor Fino</option>
+      <option value="6" selected>Grosor Medio</option>
+      <option value="16">Grosor Ancho</option>
+      <option value="30">Grosor Lavado / Grande</option>
     </select>
 
-    <label style="background:#3b82f6; color:white; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold;">
+    <label style="background:#2563eb; color:white; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.82rem;">
       📷 Foto + GPS
       <input type="file" accept="image/*" capture="environment" onchange="handleFotoGPS(event)" style="display:none;">
     </label>
-    <button onclick="clearCanvas()" style="padding:6px 12px; border-radius:4px; border:none; background:#555; color:#fff;">🗑️ Limpiar</button>
+    
+    <button onclick="clearCanvas()" class="moleskine-tool-btn" style="background:#ef4444;">🗑️ Limpiar</button>
   </div>
 
-  <!-- Lienzo Canvas estilo Moleskine -->
-  <div style="position:relative; width:100%; text-align:center;">
-    <canvas id="moleskineCanvas" width="800" height="600" style="background:#fcfbf7; border-radius:8px; border:1px solid #d1d5db; width:100%; max-width:100%; touch-action:none; box-shadow:0 4px 6px -1px rgba(0,0,0,0.3);"></canvas>
+  <!-- Redimensionar Foto Insertada -->
+  <div id="photoControls" style="display:none; background:#18212b; padding:8px; border-radius:6px; margin-bottom:10px; align-items:center; gap:10px; border:1px solid #3f5162;">
+    <span style="font-size:0.8rem;">Escala de foto insertada:</span>
+    <input type="range" id="photoScale" min="0.2" max="1.0" step="0.05" value="0.7" oninput="updatePhotoScale(this.value)">
+    <button onclick="confirmPhotoPlacement()" style="background:#10b981; border:none; color:#fff; padding:4px 10px; border-radius:4px; font-weight:bold; cursor:pointer;">Fijar Foto</button>
   </div>
 
-  <!-- Campo de Texto y Agendar -->
-  <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
-    <textarea id="moleskineText" placeholder="Escribe aquí tus impresiones o notas del lugar..." style="width:100%; height:80px; padding:10px; border-radius:6px; background:#111; color:#fff; border:1px solid #333;"></textarea>
-    <div style="display:flex; gap:10px;">
-      <button onclick="saveMoleskineNote()" style="flex:1; background:#4ade80; color:#000; font-weight:bold; padding:10px; border-radius:6px; border:none; cursor:pointer;">💾 Guardar Nota Moleskine</button>
-      <button id="btnCalendar" onclick="exportToCalendar()" style="display:none; background:#8b5cf6; color:#fff; font-weight:bold; padding:10px; border-radius:6px; border:none; cursor:pointer;">📅 Añadir a Google Calendar</button>
-    </div>
-    <div id="gpsStatus" style="font-size:12px; color:var(--muted); font-style:italic;"></div>
+  <!-- Lienzo Folio DIN A4 con Scroll -->
+  <div class="folio-wrapper">
+    <canvas id="moleskineCanvas" width="794" height="1123"></canvas>
+  </div>
+
+  <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
+    <button onclick="saveMoleskineNote()" style="flex:1; background:#10b981; color:#fff; font-weight:bold; padding:10px; border-radius:6px; border:none; cursor:pointer; font-size:0.95rem;">💾 Guardar Nota en Biblioteca</button>
+    <button id="btnCalendar" onclick="exportToCalendar()" style="display:none; background:#8b5cf6; color:#fff; font-weight:bold; padding:10px; border-radius:6px; border:none; cursor:pointer; font-size:0.9rem;">📅 Añadir a Google Calendar</button>
+  </div>
+  <div id="gpsStatus" style="font-size:12px; color:var(--muted); font-style:italic; margin-top:5px;"></div>
+
+  <!-- Galería / Historial de Notas Guardadas -->
+  <div class="saved-notes-list">
+    <h3 style="color:var(--accent); margin-bottom:10px; font-size:1.1rem;">📚 Biblioteca de Notas Moleskine Guardadas</h3>
+    <div id="savedNotesContainer"></div>
   </div>
 </div>
 
@@ -367,62 +395,33 @@ const data = [
   {id:"m13",nombre:"Museo del Ferrocarril",categoria:"museos",condicion:"descuento-darde",badgeText:"Descuento DARDE",direccion:"Paseo de las Delicias, 61",telefono:"915 06 83 29",web:"https://www.museodelferrocarril.org",precioGeneral:"7,00 €",precioDARDE:"4,00 € (Tarifa reducida)",gratisGeneral:"No disponible",notas:"Antigua estación de Delicias con locomotoras, coches y patrimonio ferroviario.",imagenQuery:"Museo del Ferrocarril Madrid exterior"},
   {id:"m14",nombre:"Museo Geominero",categoria:"museos",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Calle de Ríos Rosas, 23",telefono:"913 49 57 59",web:"https://www.igme.es/museo",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Siempre gratuito",notas:"Minerales, fósiles y rocas en una espectacular sala histórica.",imagenQuery:"Museo Geominero Madrid exterior"},
   {id:"m15",nombre:"Museo Casa de la Moneda",categoria:"museos",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Calle del Doctor Esquerdo, 36",telefono:"915 66 65 44",web:"https://www.museocasadelamoneda.es",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Siempre gratuito con DNI",notas:"Historia de la moneda, medallas y sistemas de fabricación.",imagenQuery:"Museo Casa de la Moneda Madrid exterior"},
-  {id:"m17",nombre:"Museo Sorolla",categoria:"museos",condicion:"gratis-darde",badgeText:"Gratis DARDE",direccion:"Paseo del General Martínez Campos, 37",telefono:"913 10 15 84",web:"https://www.cultura.gob.es/msorolla",precioGeneral:"3,00 €",precioDARDE:"0,00 € acreditando desempleo",gratisGeneral:"Sáb desde 14:00 h y Domingos",notas:"Casa-museo del pintor Joaquín Sorolla, conservada con parte de su decoración original, estudio y jardines. Actualmente está cerrado temporalmente por las obras de ampliación y rehabilitación.",imagenQuery:"Museo Sorolla Madrid exterior"},
-  {id:"m18",nombre:"Museo de San Isidro. Los Orígenes de Madrid",categoria:"museos",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Plaza de San Andrés, 2",telefono:"913 66 74 15",web:"https://www.madrid.es/museosanisidro",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Entrada gratuita",notas:"Museo dedicado a los orígenes e historia de Madrid, con arqueología, patrimonio madrileño y un jardín arqueobotánico. Cuenta además con un almacén visitable con numerosas piezas arqueológicas.",imagenQuery:"Museo de San Isidro Madrid exterior"},
+  {id:"m17",nombre:"Museo Sorolla",categoria:"museos",condicion:"gratis-darde",badgeText:"Gratis DARDE",direccion:"Paseo del General Martínez Campos, 37",telefono:"913 10 15 84",web:"https://www.cultura.gob.es/msorolla",precioGeneral:"3,00 €",precioDARDE:"0,00 € acreditando desempleo",gratisGeneral:"Sáb desde 14:00 h y Domingos",notas:"Casa-museo del pintor Joaquín Sorolla, conservada con parte de su decoración original, estudio y jardines.",imagenQuery:"Museo Sorolla Madrid exterior"},
+  {id:"m18",nombre:"Museo de San Isidro. Los Orígenes de Madrid",categoria:"museos",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Plaza de San Andrés, 2",telefono:"913 66 74 15",web:"https://www.madrid.es/museosanisidro",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Entrada gratuita",notas:"Museo dedicado a los orígenes e historia de Madrid, con arqueología y jardín arqueobotánico.",imagenQuery:"Museo de San Isidro Madrid exterior"},
   {id:"m16",nombre:"Museo de Historia de Madrid",categoria:"museos",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Calle de Fuencarral, 78",telefono:"915 88 86 72",web:"https://www.madrid.es/museodehistoria",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Martes a domingo entrada libre",notas:"Historia de Madrid desde la época de los Austrias hasta la actualidad.",imagenQuery:"Museo de Historia de Madrid exterior"},
 
-  {id:"p1",nombre:"Palacio Real de Madrid",categoria:"patrimonio",condicion:"gratis-darde",badgeText:"Gratis DARDE",direccion:"Calle de Bailén, s/n",telefono:"914 54 87 00",web:"https://www.patrimonionacional.es",precioGeneral:"14,00 €",precioDARDE:"0,00 € siempre en taquilla",gratisGeneral:"L-J 17:00-19:00 h (UE/Iberoamérica)",notas:"Gran conjunto palaciego del siglo XVIII y una de las visitas patrimoniales esenciales de Madrid.",imagenQuery:"Palacio Real Madrid exterior"},
-  {id:"p2",nombre:"Monasterio Descalzas Reales",categoria:"patrimonio",condicion:"gratis-darde",badgeText:"Gratis DARDE",direccion:"Plaza de las Descalzas, 3",telefono:"914 54 87 00",web:"https://www.patrimonionacional.es",precioGeneral:"8,00 €",precioDARDE:"0,00 € (Incluye visita guiada)",gratisGeneral:"Mié y Jue 16:00-18:30 h",notas:"Monasterio de clausura con importante patrimonio artístico y arte sacro en pleno centro de Madrid.",imagenQuery:"Monasterio Descalzas Reales Madrid exterior"},
-  {id:"p3",nombre:"Real Monasterio de la Encarnación",categoria:"patrimonio",condicion:"gratis-darde",badgeText:"Gratis DARDE",direccion:"Plaza de la Encarnación, 1",telefono:"914 54 87 00",web:"https://www.patrimonionacional.es",precioGeneral:"7,00 €",precioDARDE:"0,00 € siempre",gratisGeneral:"Mié y Jue 16:00-18:30 h",notas:"Monasterio agustino de gran interés histórico, con relicario barroco y obras de arte.",imagenQuery:"Real Monasterio de la Encarnacion Madrid exterior"},
-  {id:"p4",nombre:"Panteón de España",categoria:"patrimonio",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Calle de Julián Gayarre, 3",telefono:"914 54 87 00",web:"https://www.patrimonionacional.es",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Entrada libre",notas:"Panteón monumental dedicado a figuras relevantes de la historia política española.",imagenQuery:"Panteon de España Madrid exterior"},
-  {id:"p6",nombre:"Palacio Real de El Pardo",categoria:"patrimonio",condicion:"gratis-darde",badgeText:"Gratis DARDE",direccion:"Manuel Alonso, s/n (El Pardo)",telefono:"913 76 15 00",web:"https://www.patrimonionacional.es",precioGeneral:"9,00 €",precioDARDE:"0,00 € siempre",gratisGeneral:"Mié y Dom por la tarde",notas:"Antigua residencia real vinculada históricamente a la caza y al entorno de El Pardo.",imagenQuery:"Palacio Real de El Pardo Madrid exterior"},
-  {id:"p8",nombre:"Catedral Ortodoxa Rusa de Santa María Magdalena",categoria:"patrimonio",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Gran Vía de Hortaleza, 48",telefono:"615 77 59 97",web:"https://orthodoxmadrid.es",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Visita gratuita; visita guiada en castellano los sábados a las 17:00 h",notas:"Templo neobizantino de la Iglesia Ortodoxa Rusa en Madrid. Ofrece oficios litúrgicos con canto y visitas guiadas gratuitas; conviene consultar en su web el calendario actualizado de celebraciones y actividades.",imagenQuery:"Catedral Ortodoxa Rusa Santa Maria Magdalena Madrid exterior"},
-  {id:"p9",nombre:"Convento de las Carboneras del Corpus Christi",categoria:"patrimonio",condicion:"gratis-todos",badgeText:"Acceso Libre / Experiencia",direccion:"Plaza del Conde de Miranda, 3",telefono:"915 48 37 01",web:"https://www.esmadrid.com/informacion-turistica/convento-de-las-carboneras",precioGeneral:"0,00 € (acceso al templo)",precioDARDE:"0,00 €",gratisGeneral:"Acceso al templo libre. Torno de dulces: 9:30-13:00 y 16:30-18:15",notas:"Convento de clausura especialmente conocido por la venta de dulces caseros mediante un torno. Se accede por la puerta derecha al inicio de la calle del Codo: se llama, se hace el pedido y las monjas lo entregan a través del torno.",imagenQuery:"Convento de las Carboneras Madrid exterior"},
-  {id:"p10",nombre:"Ermita de San Antonio de la Florida",categoria:"patrimonio",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Glorieta de San Antonio de la Florida, 5",telefono:"915 42 07 22",web:"https://www.madrid.es/ermita",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Entrada gratuita; visitas guiadas gratuitas para grupos con reserva",notas:"Pequeña ermita neoclásica célebre por los frescos de Goya y por albergar los restos del pintor. La visita individual es gratuita y las visitas guiadas para grupos también son gratuitas con reserva.",imagenQuery:"Ermita San Antonio de la Florida Madrid exterior"},
-  {id:"p11",nombre:"Iglesia de San Antonio de los Alemanes",categoria:"patrimonio",condicion:"gratis-todos",badgeText:"Gratis Domingo",direccion:"Calle de la Puebla, 22",telefono:"697 89 86 59",web:"https://realhermandaddelrefugio.org/",precioGeneral:"12,00 €",precioDARDE:"Consultar condición vigente",gratisGeneral:"Visita gratuita previa reserva online los domingos a las 15:00 h",notas:"Uno de los interiores barrocos más singulares de Madrid, con una iglesia completamente decorada con pinturas murales. La visita gratuita de los domingos permite conocerla sin pagar entrada.",imagenQuery:"Iglesia San Antonio de los Alemanes Madrid exterior"},
-  {id:"p12",nombre:"Iglesia de San Jerónimo el Real",categoria:"patrimonio",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Calle Moreto, 4",telefono:"914 20 30 78",web:"https://www.sanjeronimoelreal.es/",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Acceso libre; visitas guiadas gratuitas de Piedras Vivas",notas:"Templo tardogótico de enorme importancia histórica, vinculado a la monarquía y al antiguo Buen Retiro. El acceso es libre, hay visitas guiadas gratuitas y el cuarto domingo de cada mes la misa de las 12:00 es cantada por el Coro de los Jerónimos.",imagenQuery:"Iglesia San Jeronimo el Real Madrid exterior"},
-  {id:"p13",nombre:"Palacio de Fomento — Ministerio de Agricultura, Pesca y Alimentación",categoria:"patrimonio",condicion:"descuento-darde",badgeText:"Descuento DARDE",direccion:"Paseo de la Infanta Isabel, 1",telefono:"913 47 53 68",web:"https://www.mapa.gob.es/es/ministerio/palacio-de-fomento/visitas-guiadas/guiadas.aspx",precioGeneral:"2,00 €",precioDARDE:"1,00 € para desempleados",gratisGeneral:"No disponible",notas:"Monumental edificio de Ricardo Velázquez Bosco junto a Atocha, declarado Bien de Interés Cultural. Las visitas guiadas recorren sus espacios artísticos y arquitectónicos; también existen visitas teatralizadas.",imagenQuery:"Palacio Fomento Ministerio Agricultura Madrid exterior"},
-  {id:"p7",nombre:"Palacio Real de Aranjuez",categoria:"patrimonio",condicion:"gratis-darde",badgeText:"Gratis DARDE",direccion:"Aranjuez, Madrid",telefono:"918 91 13 44",web:"https://www.patrimonionacional.es",precioGeneral:"9,00 €",precioDARDE:"0,00 € siempre",gratisGeneral:"Mié y Dom por la tarde",notas:"Palacio real rodeado de jardines históricos junto al Tajo.",imagenQuery:"Palacio Real de Aranjuez exterior"},
+  {id:"p1",nombre:"Palacio Real de Madrid",categoria:"patrimonio",condicion:"gratis-darde",badgeText:"Gratis DARDE",direccion:"Calle de Bailén, s/n",telefono:"914 54 87 00",web:"https://www.patrimonionacional.es",precioGeneral:"14,00 €",precioDARDE:"0,00 € siempre en taquilla",gratisGeneral:"L-J 17:00-19:00 h",notas:"Gran conjunto palaciego del siglo XVIII y una de las visitas patrimoniales esenciales.",imagenQuery:"Palacio Real Madrid exterior"},
+  {id:"p2",nombre:"Monasterio Descalzas Reales",categoria:"patrimonio",condicion:"gratis-darde",badgeText:"Gratis DARDE",direccion:"Plaza de las Descalzas, 3",telefono:"914 54 87 00",web:"https://www.patrimonionacional.es",precioGeneral:"8,00 €",precioDARDE:"0,00 €",gratisGeneral:"Mié y Jue 16:00-18:30 h",notas:"Monasterio de clausura con importante patrimonio artístico.",imagenQuery:"Monasterio Descalzas Reales Madrid exterior"},
+  {id:"p3",nombre:"Real Monasterio de la Encarnación",categoria:"patrimonio",condicion:"gratis-darde",badgeText:"Gratis DARDE",direccion:"Plaza de la Encarnación, 1",telefono:"914 54 87 00",web:"https://www.patrimonionacional.es",precioGeneral:"7,00 €",precioDARDE:"0,00 €",gratisGeneral:"Mié y Jue 16:00-18:30 h",notas:"Monasterio agustino de gran interés histórico.",imagenQuery:"Real Monasterio de la Encarnacion Madrid exterior"},
+  {id:"p4",nombre:"Panteón de España",categoria:"patrimonio",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Calle de Julián Gayarre, 3",telefono:"914 54 87 00",web:"https://www.patrimonionacional.es",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Entrada libre",notas:"Panteón monumental dedicado a figuras relevantes de la historia española.",imagenQuery:"Panteon de España Madrid exterior"},
+  {id:"p6",nombre:"Palacio Real de El Pardo",categoria:"patrimonio",condicion:"gratis-darde",badgeText:"Gratis DARDE",direccion:"Manuel Alonso, s/n (El Pardo)",telefono:"913 76 15 00",web:"https://www.patrimonionacional.es",precioGeneral:"9,00 €",precioDARDE:"0,00 €",gratisGeneral:"Mié y Dom por la tarde",notas:"Antigua residencia real vinculada históricamente a la caza.",imagenQuery:"Palacio Real de El Pardo Madrid exterior"},
+  {id:"p8",nombre:"Catedral Ortodoxa Rusa de Santa María Magdalena",categoria:"patrimonio",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Gran Vía de Hortaleza, 48",telefono:"615 77 59 97",web:"https://orthodoxmadrid.es",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Visita gratuita",notas:"Templo neobizantino de la Iglesia Ortodoxa Rusa en Madrid.",imagenQuery:"Catedral Ortodoxa Rusa Santa Maria Magdalena Madrid exterior"},
+  {id:"p9",nombre:"Convento de las Carboneras del Corpus Christi",categoria:"patrimonio",condicion:"gratis-todos",badgeText:"Acceso Libre",direccion:"Plaza del Conde de Miranda, 3",telefono:"915 48 37 01",web:"https://www.esmadrid.com",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Acceso libre",notas:"Convento de clausura conocido por la venta de dulces caseros por un torno.",imagenQuery:"Convento de las Carboneras Madrid exterior"},
+  {id:"p10",nombre:"Ermita de San Antonio de la Florida",categoria:"patrimonio",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Glorieta de San Antonio de la Florida, 5",telefono:"915 42 07 22",web:"https://www.madrid.es",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Entrada gratuita",notas:"Ermita neoclásica célebre por los frescos de Goya.",imagenQuery:"Ermita San Antonio de la Florida Madrid exterior"},
 
-  {id:"t1",nombre:"Teatro María Guerrero (CDN)",categoria:"teatros",condicion:"descuento-darde",badgeText:"50% Descuento",direccion:"Calle de Tamayo y Baus, 4",telefono:"913 10 15 00",web:"https://dramatico.mcu.es",precioGeneral:"12,00 € - 25,00 €",precioDARDE:"50% Dto (6,00 € - 12,50 €)",gratisGeneral:"No disponible",notas:"Sede histórica del Centro Dramático Nacional y uno de los teatros públicos de referencia de Madrid.",imagenQuery:"Teatro Maria Guerrero Madrid exterior"},
-  {id:"t2",nombre:"Teatro Valle-Inclán (CDN)",categoria:"teatros",condicion:"descuento-darde",badgeText:"50% Descuento",direccion:"Plaza de Lavapiés, s/n",telefono:"915 05 88 00",web:"https://dramatico.mcu.es",precioGeneral:"12,00 € - 25,00 €",precioDARDE:"50% Dto (6,00 € - 12,50 €)",gratisGeneral:"No disponible",notas:"Teatro del Centro Dramático Nacional dedicado a propuestas contemporáneas y de creación actual.",imagenQuery:"Teatro Valle Inclan Madrid exterior"},
-  {id:"t3",nombre:"Teatro de la Comedia (CNTC)",categoria:"teatros",condicion:"descuento-darde",badgeText:"50% Descuento",direccion:"Calle del Príncipe, 14",telefono:"915 24 10 00",web:"https://teatroclasico.mcu.es",precioGeneral:"15,00 € - 30,00 €",precioDARDE:"50% Dto (7,50 € - 15,00 €)",gratisGeneral:"No disponible",notas:"Sede de la Compañía Nacional de Teatro Clásico y referencia del teatro clásico español.",imagenQuery:"Teatro de la Comedia Madrid exterior"},
-  {id:"t4",nombre:"Teatro de la Zarzuela",categoria:"teatros",condicion:"descuento-darde",badgeText:"50% Descuento",direccion:"Calle de Jovellanos, 4",telefono:"915 24 54 00",web:"https://teatrodelazarzuela.mcu.es",precioGeneral:"12,00 € - 50,00 €",precioDARDE:"50% Dto en taquilla",gratisGeneral:"No disponible",notas:"Teatro histórico especializado en zarzuela, género lírico español y otras producciones musicales.",imagenQuery:"Teatro de la Zarzuela Madrid exterior"},
-  {id:"t5",nombre:"Teatros del Canal",categoria:"teatros",condicion:"descuento-darde",badgeText:"Descuento DARDE",direccion:"Calle de Cea Bermúdez, 1",telefono:"913 08 99 99",web:"https://www.teatroscanal.com",precioGeneral:"15,00 € - 35,00 €",precioDARDE:"5,00 € dto directo en entrada",gratisGeneral:"No disponible",notas:"Complejo escénico de la Comunidad de Madrid con teatro, danza, música, circo y ópera.",imagenQuery:"Teatros del Canal Madrid exterior"},
-  {id:"t6",nombre:"Auditorio Nacional de Música",categoria:"teatros",condicion:"descuento-darde",badgeText:"50% Descuento",direccion:"Calle del Príncipe de Vergara, 146",telefono:"913 37 01 40",web:"https://www.auditorionacional.mcu.es",precioGeneral:"15,00 € - 40,00 €",precioDARDE:"50% Dto en entradas del OCNE",gratisGeneral:"No disponible",notas:"Principal complejo sinfónico de Madrid y sede habitual de la Orquesta y Coro Nacionales de España.",imagenQuery:"Auditorio Nacional de Musica Madrid exterior"},
+  {id:"t1",nombre:"Teatro María Guerrero (CDN)",categoria:"teatros",condicion:"descuento-darde",badgeText:"50% Descuento",direccion:"Calle de Tamayo y Baus, 4",telefono:"913 10 15 00",web:"https://dramatico.mcu.es",precioGeneral:"12,00 € - 25,00 €",precioDARDE:"50% Dto",gratisGeneral:"No disponible",notas:"Sede histórica del Centro Dramático Nacional.",imagenQuery:"Teatro Maria Guerrero Madrid exterior"},
+  {id:"t2",nombre:"Teatro Valle-Inclán (CDN)",categoria:"teatros",condicion:"descuento-darde",badgeText:"50% Descuento",direccion:"Plaza de Lavapiés, s/n",telefono:"915 05 88 00",web:"https://dramatico.mcu.es",precioGeneral:"12,00 € - 25,00 €",precioDARDE:"50% Dto",gratisGeneral:"No disponible",notas:"Teatro dedicado a propuestas contemporáneas.",imagenQuery:"Teatro Valle Inclan Madrid exterior"},
 
-  {id:"c1",nombre:"Cine Doré (Filmoteca Española)",categoria:"cines",condicion:"descuento-darde",badgeText:"Tarifa Reducida",direccion:"Calle de Santa Isabel, 3",telefono:"913 69 11 25",web:"https://www.cultura.gob.es/filmoteca",precioGeneral:"3,50 €",precioDARDE:"3,00 €",gratisGeneral:"No disponible",notas:"Histórico cine de la Filmoteca Española, con programación de cine clásico, de autor y retrospectivas.",imagenQuery:"Cine Doré Madrid exterior"},
-  {id:"c2",nombre:"Cineteca Madrid (Matadero)",categoria:"cines",condicion:"descuento-darde",badgeText:"Tarifa Reducida",direccion:"Plaza de Legazpi, 8",telefono:"914 17 93 83",web:"https://www.cinetecamadrid.com",precioGeneral:"3,50 €",precioDARDE:"3,00 €",gratisGeneral:"No disponible",notas:"Espacio dedicado al cine documental, independiente y de creación contemporánea en Matadero Madrid.",imagenQuery:"Cineteca Madrid Matadero exterior"},
-  {id:"c3",nombre:"Casa de América (Sala Iberia)",categoria:"cines",condicion:"descuento-darde",badgeText:"1,00 € DARDE",direccion:"Plaza de la Cibeles, s/n",telefono:"915 95 48 00",web:"https://www.casamerica.es",precioGeneral:"5,00 €",precioDARDE:"1,00 €",gratisGeneral:"No disponible",notas:"Palacio de Linares y centro cultural dedicado a las relaciones entre España y América.",imagenQuery:"Casa de America Madrid exterior"},
-  {id:"c4",nombre:"Sala Berlanga (SGAE)",categoria:"cines",condicion:"descuento-darde",badgeText:"Tarifa Reducida",direccion:"Calle de Andrés Mellado, 53",telefono:"914 46 07 70",web:"https://www.salaberlanga.com",precioGeneral:"3,50 €",precioDARDE:"2,00 €",gratisGeneral:"No disponible",notas:"Sala de cine de la Fundación SGAE con ciclos, muestras y cine español.",imagenQuery:"Sala Berlanga Madrid exterior"},
+  {id:"c1",nombre:"Cine Doré (Filmoteca Española)",categoria:"cines",condicion:"descuento-darde",badgeText:"Tarifa Reducida",direccion:"Calle de Santa Isabel, 3",telefono:"913 69 11 25",web:"https://www.cultura.gob.es/filmoteca",precioGeneral:"3,50 €",precioDARDE:"3,00 €",gratisGeneral:"No disponible",notas:"Histórico cine de la Filmoteca Española.",imagenQuery:"Cine Doré Madrid exterior"},
+  {id:"c2",nombre:"Cineteca Madrid (Matadero)",categoria:"cines",condicion:"descuento-darde",badgeText:"Tarifa Reducida",direccion:"Plaza de Legazpi, 8",telefono:"914 17 93 83",web:"https://www.cinetecamadrid.com",precioGeneral:"3,50 €",precioDARDE:"3,00 €",gratisGeneral:"No disponible",notas:"Espacio dedicado al cine documental en Matadero.",imagenQuery:"Cineteca Madrid Matadero exterior"},
 
-  {id:"e1",nombre:"Real Jardín Botánico (CSIC)",categoria:"espacios",condicion:"descuento-darde",badgeText:"1,00 € DARDE",direccion:"Plaza de Murillo, 2",telefono:"914 20 30 17",web:"https://rjb.csic.es",precioGeneral:"4,00 €",precioDARDE:"1,00 €",gratisGeneral:"Martes 10:00-13:00 h",notas:"Jardín histórico junto al Paseo del Prado, con colecciones botánicas, invernaderos y trazado histórico.",imagenQuery:"Real Jardin Botanico Madrid exterior"},
-  {id:"e2",nombre:"Círculo de Bellas Artes",categoria:"espacios",condicion:"descuento-darde",badgeText:"4,00 € DARDE",direccion:"Calle de Alcalá, 42",telefono:"913 60 54 00",web:"https://www.circulobellasartes.com",precioGeneral:"5,00 €",precioDARDE:"4,00 €",gratisGeneral:"No disponible",notas:"Centro cultural multidisciplinar con exposiciones, actividades y la conocida azotea.",imagenQuery:"Circulo de Bellas Artes Madrid exterior"},
-  {id:"e3",nombre:"CaixaForum Madrid",categoria:"espacios",condicion:"gratis-darde",badgeText:"Gratis DARDE",direccion:"Paseo del Prado, 36",telefono:"913 30 73 00",web:"https://caixaforum.org/es/madrid",precioGeneral:"6,00 €",precioDARDE:"0,00 € en taquilla",gratisGeneral:"Gratis para clientes CaixaBank",notas:"Centro cultural del Paseo del Prado, famoso por su jardín vertical y arquitectura contemporánea.",imagenQuery:"CaixaForum Madrid exterior"},
-  {id:"e4",nombre:"Espacio Fundación Telefónica",categoria:"espacios",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Calle de Gran Vía, 28",telefono:"915 80 87 00",web:"https://espacio.fundaciontelefonica.com",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"Acceso libre",notas:"Centro cultural en el histórico edificio Telefónica, con exposiciones sobre arte, tecnología y sociedad.",imagenQuery:"Espacio Fundación Telefonica Madrid exterior"},
-  {
-    id: "espacio-arganzuela",
-    nombre: "Invernadero del Palacio de Cristal de Arganzuela",
-    categoria: "espacios",
-    condicion: "gratis-todos",
-    badgeText: "Gratis Todo Público",
-    direccion: "Paseo de la Chopera, 10",
-    telefono: "915 88 51 64",
-    web: "https://www.madrid.es",
-    precioGeneral: "0,00 €",
-    precioDARDE: "0,00 €",
-    gratisGeneral: "Entrada libre",
-    notas: "Antiguo matadero municipal rehabilitado como un impresionante invernadero con cuatro microclimas que albergan plantas exóticas, rías y especies tropicales y desérticas.",
-    imagenQuery: "Invernadero Palacio de Cristal Arganzuela Madrid exterior"
-  },
-  {id:"p14",nombre:"Monasterio de Santa María de El Paular",categoria:"patrimonio",condicion:"descuento-darde",badgeText:"Consultar DARDE",direccion:"Rascafría, Madrid",telefono:"918 69 14 25",web:"https://www.cultura.gob.es/",precioGeneral:"Consultar tarifa vigente",precioDARDE:"Consultar condición vigente",gratisGeneral:"Consultar horarios y condiciones",notas:"Monasterio cartujo de gran interés histórico y artístico, situado en el valle del Lozoya. Se incorpora como visita patrimonial de especial interés dentro de las salidas culturales desde Madrid.",imagenQuery:"Monasterio de El Paular Rascafria Madrid exterior"},
-  {id:"r2",nombre:"Tren de la Fresa",categoria:"rutas",condicion:"descuento-darde",badgeText:"Actividad de pago",direccion:"Estación de Madrid-Atocha — destino Aranjuez",telefono:"912 32 03 20",web:"https://www.museodelferrocarril.org/tren-fresa/",precioGeneral:"Consultar temporada",precioDARDE:"Consultar tarifa vigente",gratisGeneral:"No gratuito; actividad con billete",notas:"Tren histórico y experiencia turística entre Madrid y Aranjuez, vinculada al patrimonio ferroviario y a la visita de Aranjuez. Conviene consultar la temporada, fechas de circulación, horarios y tarifas antes de reservar.",imagenQuery:"Tren de la Fresa Madrid Aranjuez exterior"},
-  {id:"r1",nombre:"Programa 'Pasea Madrid'",categoria:"rutas",condicion:"gratis-todos",badgeText:"Gratis Todo Público",direccion:"Varios itinerarios por la ciudad",telefono:"010",web:"https://paseamadrid.madrid.es",precioGeneral:"0,00 €",precioDARDE:"0,00 €",gratisGeneral:"100% Gratis previa reserva",notas:"Programa municipal de visitas y rutas guiadas para conocer patrimonio, historia y espacios singulares de Madrid.",imagenQuery:"Madrid historic streets Puerta del Sol exterior"}
+  {id:"e1",nombre:"Real Jardín Botánico (CSIC)",categoria:"espacios",condicion:"descuento-darde",badgeText:"1,00 € DARDE",direccion:"Plaza de Murillo, 2",telefono:"914 20 30 17",web:"https://rjb.csic.es",precioGeneral:"4,00 €",precioDARDE:"1,00 €",gratisGeneral:"Martes 10:00-13:00 h",notas:"Jardín histórico con colecciones botánicas.",imagenQuery:"Real Jardin Botanico Madrid exterior"},
+  {id:"e3",nombre:"CaixaForum Madrid",categoria:"espacios",condicion:"gratis-darde",badgeText:"Gratis DARDE",direccion:"Paseo del Prado, 36",telefono:"913 30 73 00",web:"https://caixaforum.org/es/madrid",precioGeneral:"6,00 €",precioDARDE:"0,00 € en taquilla",gratisGeneral:"Gratis para clientes CaixaBank",notas:"Famoso por su jardín vertical y arquitectura contemporánea.",imagenQuery:"CaixaForum Madrid exterior"}
 ];
 
 window.visitedItems = JSON.parse(localStorage.getItem("visited_cultural_madrid") || "[]");
 window.scheduledEvents = JSON.parse(localStorage.getItem("scheduled_events_madrid") || "[]");
 window.userNotes = JSON.parse(localStorage.getItem("user_place_notes_madrid") || "{}");
+window.moleskineLibrary = JSON.parse(localStorage.getItem("moleskine_saved_notes") || "[]");
 let imageCache = JSON.parse(localStorage.getItem("commons_image_cache_madrid") || "{}");
 
 let currentCategory="all";
@@ -528,13 +527,6 @@ function saveEvent(){
   const time = document.getElementById("eventTime").value || "18:00";
   if(!date)return alert("Por favor selecciona una fecha");
 
-  const conflictingEvent = window.scheduledEvents.find(e =>
-    e.date === date && e.time === time && e.id !== editingEventId
-  );
-  if(conflictingEvent){
-    return alert(`Ya tienes un evento a las ${time} el ${date}: "${conflictingEvent.title}".\n\nElige otra hora para evitar el solapamiento.`);
-  }
-
   let savedEvId = null;
   if(editingEventId){
     const idx = window.scheduledEvents.findIndex(e => e.id === editingEventId);
@@ -567,33 +559,6 @@ function saveEvent(){
   agendaCursor = new Date(y, m - 1, 1);
   agendaView = "month";
   setCategoryTab("agenda");
-  
-  if(savedEvId){
-    showEventDetail(savedEvId);
-  }
-}
-
-function goToScheduledDate(placeId){
-  const ev = window.scheduledEvents.find(e => e.placeId === placeId);
-  if(!ev) return;
-  const [y, m, d] = ev.date.split("-").map(Number);
-  agendaCursor = new Date(y, m - 1, 1);
-  agendaView = "month";
-  setCategoryTab("agenda");
-}
-
-function editScheduledEvent(placeId){
-  const ev = window.scheduledEvents.find(e => e.placeId === placeId);
-  if(!ev) return;
-  openModal(placeId, ev);
-}
-
-function deleteEvent(eventId){
-  window.scheduledEvents = window.scheduledEvents.filter(e=>e.id!==eventId);
-  localStorage.setItem("scheduled_events_madrid", JSON.stringify(window.scheduledEvents));
-  if(window.saveToFirebase) window.saveToFirebase('scheduled_events_madrid', window.scheduledEvents);
-  closeEventDetail();
-  renderContent();
 }
 
 function setConditionFilter(condition){
@@ -614,19 +579,6 @@ function setCategoryTab(category){
 }
 
 document.getElementById("searchInput").addEventListener("input",e=>{searchQuery=e.target.value;renderContent()});
-
-function getGoogleCalendarUrl(event){
-  const start=new Date(event.date+"T"+event.time);
-  const end=new Date(start.getTime()+2*60*60*1000);
-  const fmt=d=>d.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
-  const text=encodeURIComponent(event.title);
-  const location=encodeURIComponent(event.address);
-  const rawNote = window.userNotes[event.placeId] || '';
-  const myNote = rawNote ? `\n\nMis Notas Personales:\n${rawNote.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '$1 ($2)')}` : '';
-  const detailsText = `Dirección: ${event.address}\nTeléfono: ${event.phone || 'No disponible'}\n\nDescripción:\n${event.notes || 'Sin descripción'}${myNote}`;
-  const details=encodeURIComponent(detailsText);
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${fmt(start)}/${fmt(end)}&details=${details}&location=${location}`;
-}
 
 async function loadCommonsImage(item,img,credit){
   const cached=imageCache[item.id];
@@ -656,34 +608,23 @@ async function loadCommonsImage(item,img,credit){
   }catch(err){
     img.classList.remove("loading");
     img.removeAttribute("src");
-    img.alt=`Imagen no disponible para ${item.nombre}`;
-    credit.innerHTML=`Imagen de Wikimedia Commons no disponible`;
+    img.alt=`Imagen no disponible`;
   }
 }
-
-function stripHtml(s){return String(s||"").replace(/<[^>]*>/g,"").trim()}
 
 function applyCommonsResult(item,img,credit,result){
   img.src=result.url;
   img.alt=item.nombre;
   img.classList.remove("loading");
-  const who=stripHtml(result.author);
-  const lic=stripHtml(result.license);
-  credit.innerHTML=`<a href="${result.source}" target="_blank" rel="noopener noreferrer">Wikimedia Commons${who?` · ${escapeHtml(who)}`:""}${lic?` · ${escapeHtml(lic)}`:""}</a>`;
+  credit.innerHTML=`<a href="${result.source}" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>`;
 }
 
 function renderCards(filtered){
   const contentArea = document.getElementById("contentArea");
   if(!filtered.length){
-    contentArea.innerHTML = `<div class="empty">${currentCategory==="vistos"?"Aún no has marcado ningún espacio como visitado.":"No se encontraron resultados para los filtros seleccionados."}</div>`;
+    contentArea.innerHTML = `<div class="empty">No se encontraron resultados.</div>`;
     return;
   }
-  
-  filtered.sort((a, b) => {
-    const aVisited = window.visitedItems.includes(a.id) ? 1 : 0;
-    const bVisited = window.visitedItems.includes(b.id) ? 1 : 0;
-    return bVisited - aVisited;
-  });
 
   const grouped = {};
   filtered.forEach(item => (grouped[item.categoria] ??= []).push(item));
@@ -701,14 +642,10 @@ function renderCards(filtered){
 
         let scheduleButtonHtml = `<button class="btn-action btn-schedule" onclick="openModal('${item.id}')">📅 Agendar</button>`;
         if(isScheduled){
-          scheduleButtonHtml = `
-            <button class="btn-action btn-scheduled" onclick="goToScheduledDate('${item.id}')" title="Ver en agenda (${scheduledEvent.date})">✓ Agendado</button>
-            <button class="btn-action btn-edit-schedule" onclick="editScheduledEvent('${item.id}')" title="Editar / Reagendar">✏️</button>
-          `;
+          scheduleButtonHtml = `<button class="btn-action btn-scheduled">✓ Agendado</button>`;
         }
 
-        const notesButtonHtml = `<button class="btn-action btn-user-notes ${hasMyNotes?'has-notes':''}" onclick="openUserNotesModal('${item.id}')" title="Anotaciones personales">${hasMyNotes ? '📝 Notas ✓' : '📝 Notas'}</button>`;
-        const userNotePreview = hasMyNotes ? `<div class="user-notes-preview"><strong>Mis Notas:</strong> ${parseMarkdownLinks(window.userNotes[item.id])}</div>` : '';
+        const notesButtonHtml = `<button class="btn-action btn-user-notes ${hasMyNotes?'has-notes':''}" onclick="openUserNotesModal('${item.id}')">${hasMyNotes ? '📝 Notas ✓' : '📝 Notas'}</button>`;
 
         html += `
           <article class="card ${item.categoria} ${isVisited?"visited":""}" id="card-${item.id}">
@@ -716,7 +653,7 @@ function renderCards(filtered){
               <a href="${item.web}" target="_blank" rel="noopener noreferrer">
                 <img id="img-${item.id}" class="card-img loading" alt="${escapeHtml(item.nombre)}">
               </a>
-              <div class="image-credit" id="credit-${item.id}">Buscando imagen libre en Wikimedia Commons…</div>
+              <div class="image-credit" id="credit-${item.id}">Wikimedia Commons...</div>
             </div>
             <div class="card-header">
               <div class="card-title"><a href="${item.web}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.nombre)}</a></div>
@@ -729,9 +666,7 @@ function renderCards(filtered){
                 <div class="price-row"><span>Precio General:</span><strong>${escapeHtml(item.precioGeneral)}</strong></div>
                 <div class="price-row"><span>Con DARDE:</span><strong class="darde">${escapeHtml(item.precioDARDE)}</strong></div>
               </div>
-              <div class="free-info"><strong>Público general:</strong> ${escapeHtml(item.gratisGeneral)}</div>
               <div class="notes">${escapeHtml(item.notas)}</div>
-              ${userNotePreview}
             </div>
             <div class="card-footer">
               <div style="display:flex;gap:4px;">
@@ -753,238 +688,98 @@ function renderCards(filtered){
 function renderContent(){
   document.getElementById("tabVistos").innerText=`✓ Vistos (${window.visitedItems.length})`;
   document.getElementById("tabAgenda").innerText=`📅 Agenda Eventos (${window.scheduledEvents.length})`;
-  if(currentCategory==="agenda"){
-    document.getElementById("resultsCount").innerText=`Tienes ${window.scheduledEvents.length} evento(s) agendado(s)`;
-    renderAgendaView();
-    return;
-  }
   const q=normalize(searchQuery);
   const filtered=data.filter(item=>{
     const isVisited=window.visitedItems.includes(item.id);
     const matchCategory=currentCategory==="all"||currentCategory===item.categoria||(currentCategory==="vistos"&&isVisited);
     const matchCondition=currentCondition==="all"||currentCondition===item.condicion;
-    const hay=normalize([item.nombre,item.direccion,item.telefono,item.notas, (window.userNotes[item.id]||"")].join(" "));
+    const hay=normalize([item.nombre,item.direccion,item.telefono,item.notas].join(" "));
     return matchCategory&&matchCondition&&hay.includes(q);
   });
   document.getElementById("resultsCount").innerText=`Mostrando ${filtered.length} espacio(s) disponible(s)`;
   renderCards(filtered);
 }
 
-/* ---------- AGENDA ---------- */
-function dateKey(y,m,d){return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`}
-function eventsForDate(key){return window.scheduledEvents.filter(e=>e.date===key).sort((a,b)=>a.time.localeCompare(b.time))}
-function localTodayKey(){
-  const d=new Date();
-  return dateKey(d.getFullYear(),d.getMonth(),d.getDate());
-}
-function renderAgendaView(){
-  const area=document.getElementById("contentArea");
-  let html=`<div class="agenda-shell">
-    <div class="agenda-toolbar">
-      <div class="agenda-title" id="agendaTitle"></div>
-      <div class="agenda-nav">
-        <button onclick="agendaToday()">Hoy</button>
-        <button onclick="agendaMove(-1)">‹</button>
-        <button onclick="agendaMove(1)">›</button>
-        <div class="agenda-view-buttons">
-          <button id="viewMonth" onclick="setAgendaView('month')">Mes</button>
-          <button id="viewWeek" onclick="setAgendaView('week')">Semana</button>
-          <button id="viewDay" onclick="setAgendaView('day')">Día</button>
-        </div>
-      </div>
-    </div>
-    <div id="agendaVisual"></div>
-    <details class="agenda-event-list">
-      <summary>Ver todos los eventos guardados (${window.scheduledEvents.length})</summary>
-      <div style="margin-top:9px">${window.scheduledEvents.map(ev=>`
-        <div class="day-event">
-          <h4>${escapeHtml(ev.title)}</h4>
-          <p><strong>${escapeHtml(ev.date)} · ${escapeHtml(ev.time)} h</strong> ·${escapeHtml(ev.placeName)}</p>
-        </div>`).join("")||'<p class="empty">No hay eventos.</p>'}</div>
-    </details>
-  </div>`;
-  area.innerHTML=html;
-  updateAgendaVisual();
-}
-
-function setAgendaView(v){agendaView=v;updateAgendaVisual()}
-function agendaToday(){const d=new Date();agendaCursor=new Date(d.getFullYear(),d.getMonth(),1);updateAgendaVisual()}
-function agendaMove(delta){
-  if(agendaView==="month")agendaCursor.setMonth(agendaCursor.getMonth()+delta);
-  else if(agendaView==="week")agendaCursor.setDate(agendaCursor.getDate()+delta*7);
-  else agendaCursor.setDate(agendaCursor.getDate()+delta);
-  updateAgendaVisual();
-}
-
-function startOfWeek(d){
-  const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
-  const day=x.getDay();
-  const diff=day===0?-6:1-day;
-  x.setDate(x.getDate()+diff);
-  return x;
-}
-
-function updateAgendaVisual(){
-  const title=document.getElementById("agendaTitle");
-  const visual=document.getElementById("agendaVisual");
-  if(!title||!visual)return;
-  document.querySelectorAll(".agenda-view-buttons button").forEach(b=>b.classList.remove("active"));
-  document.getElementById("view"+agendaView[0].toUpperCase()+agendaView.slice(1)).classList.add("active");
-
-  if(agendaView==="month"){
-    title.innerText=`${monthsEs[agendaCursor.getMonth()]} ${agendaCursor.getFullYear()}`;
-    visual.innerHTML=renderMonthCalendar(agendaCursor);
-  }else if(agendaView==="week"){
-    const s=startOfWeek(agendaCursor);
-    const e=new Date(s);e.setDate(e.getDate()+6);
-    title.innerText=`Semana · ${s.getDate()} ${monthsEs[s.getMonth()].slice(0,3)} – ${e.getDate()} ${monthsEs[e.getMonth()].slice(0,3)} ${e.getFullYear()}`;
-    visual.innerHTML=renderWeekCalendar(s);
-  }else{
-    title.innerText=`${agendaCursor.getDate()} de ${monthsEs[agendaCursor.getMonth()]} ${agendaCursor.getFullYear()}`;
-    visual.innerHTML=renderDayCalendar(agendaCursor);
-  }
-}
-
-function renderMonthCalendar(d){
-  const y=d.getFullYear(),m=d.getMonth();
-  const first=new Date(y,m,1);
-  const start=startOfWeek(first);
-  let html='<div class="calendar">'+weekdays.map(w=>`<div class="weekday">${w}</div>`).join("");
-  for(let i=0;i<42;i++){
-    const cur=new Date(start);cur.setDate(start.getDate()+i);
-    const inMonth=cur.getMonth()===m;
-    const key=dateKey(cur.getFullYear(),cur.getMonth(),cur.getDate());
-    const evs=eventsForDate(key);
-    html+=`<div class="day-cell ${inMonth?"":"other-month"} ${key===localTodayKey()?"today":""}" ondblclick="openAgendaDay('${key}')">
-      <div class="day-number">${cur.getDate()}</div>
-      ${evs.map(ev=>eventChip(ev)).join("")}
-    </div>`;
-  }
-  return html+"</div>";
-}
-
-function renderWeekCalendar(s){
-  let html='<div class="week-view">';
-  for(let i=0;i<7;i++){
-    const cur=new Date(s);cur.setDate(s.getDate()+i);
-    const key=dateKey(cur.getFullYear(),cur.getMonth(),cur.getDate());
-    html+=`<div class="week-day ${key===localTodayKey()?"today":""}">
-      <div class="week-day-head">${weekdays[i]} ${cur.getDate()} ${monthsEs[cur.getMonth()].slice(0,3)}</div>
-      ${eventsForDate(key).map(ev=>eventChip(ev,true)).join("")||'<div style="color:#8799a7;font-size:.75rem;margin-top:10px">Sin eventos</div>'}
-    </div>`;
-  }
-  return html+"</div>";
-}
-
-function renderDayCalendar(d){
-  const key=dateKey(d.getFullYear(),d.getMonth(),d.getDate());
-  const evs=eventsForDate(key);
-  return `<div class="day-view">${evs.map(ev=>`
-    <div class="day-event">
-      <h4>${escapeHtml(ev.title)}</h4>
-      <p><strong>${escapeHtml(ev.time)} h</strong> ·${escapeHtml(ev.placeName)}</p>
-      <p>${escapeHtml(ev.address)}</p>
-      <div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap">
-        <a class="btn-gcal" target="_blank" rel="noopener noreferrer" href="${getGoogleCalendarUrl(ev)}">+ Google Calendar</a>
-        <button class="btn-action btn-edit-schedule" onclick="showEventDetail('${ev.id}'); editFromDetail('${ev.id}')">✏️ Editar</button>
-        <button class="btn-delete" onclick="deleteEvent('${ev.id}')">Eliminar</button>
-      </div>
-    </div>`).join("")||'<div class="empty">No hay eventos para este día.</div>'}</div>`;
-}
-
-function eventChip(ev,large=false){
-  return `<button class="event-chip" style="border-left-color:#9fc5e8" onclick="showEventDetail('${ev.id}')" title="${escapeHtml(ev.title)}">
-    <span class="event-time">${escapeHtml(ev.time)}</span> ${escapeHtml(ev.title)}
-  </button>`;
-}
-
-function openAgendaDay(key){
-  const [y,m,d]=key.split("-").map(Number);
-  agendaCursor=new Date(y,m-1,d);
-  agendaView="day";
-  updateAgendaVisual();
-}
-
-function showEventDetail(id){
-  const ev=window.scheduledEvents.find(e=>e.id===id);
-  if(!ev)return;
-  const rawEvNotes = window.userNotes[ev.placeId];
-  const myNotesText = rawEvNotes ? `<p style="margin-top:6px;color:#d2e6f5"><strong>Mis Notas Personales:</strong> ${parseMarkdownLinks(rawEvNotes)}</p>` : '';
-  document.getElementById("detailTitle").innerText=ev.title;
-  document.getElementById("detailBody").innerHTML=`
-    <div class="day-event">
-      <p><strong>Fecha:</strong> ${escapeHtml(ev.date)}</p>
-      <p><strong>Hora:</strong> ${escapeHtml(ev.time)} h</p>
-      <p><strong>Lugar:</strong> ${escapeHtml(ev.placeName)}</p>
-      <p><strong>Dirección:</strong> ${escapeHtml(ev.address)}</p>
-      <p><strong>Teléfono:</strong> ${escapeHtml(ev.phone || 'No disponible')}</p>
-      <p style="margin-top:6px"><strong>Descripción:</strong> ${escapeHtml(ev.notes || 'Sin descripción')}</p>
-      ${myNotesText}
-      <p style="margin-top:12px"><a class="btn-gcal" target="_blank" rel="noopener noreferrer" href="${getGoogleCalendarUrl(ev)}">+ Google Calendar</a></p>
-    </div>`;
-  document.getElementById("detailEdit").onclick=()=>editFromDetail(id);
-  document.getElementById("detailDelete").onclick=()=>deleteEvent(id);
-  document.getElementById("eventDetailModal").style.display="flex";
-}
-
-function editFromDetail(id){
-  const ev=window.scheduledEvents.find(e=>e.id===id);
-  if(!ev) return;
-  closeEventDetail();
-  openModal(ev.placeId, ev);
-}
-
-function closeEventDetail(){document.getElementById("eventDetailModal").style.display="none"}
-
-document.getElementById("eventDetailModal").addEventListener("click",e=>{if(e.target.id==="eventDetailModal")closeEventDetail()});
-document.getElementById("scheduleModal").addEventListener("click",e=>{if(e.target.id==="scheduleModal")closeModal()});
-document.getElementById("userNotesModal").addEventListener("click",e=>{if(e.target.id==="userNotesModal")closeUserNotesModal()});
-
 renderContent();
 
-/* ---------- LÓGICA MOLESKINE (UNIFICADA Y VERIFICADA) ---------- */
+/* ---------- ARQUITECTURA MOLESKINE FOLIO A4 CON HERRAMIENTAS REALES Y GUARDADO ---------- */
 let canvas = document.getElementById("moleskineCanvas");
 let ctx = canvas ? canvas.getContext("2d") : null;
 let isDrawing = false;
 let currentTool = "pen";
 let currentColor = "#000000";
-let currentSize = 12;
+let currentSize = 6;
 let currentCoords = null;
+
+let undoStack = [];
+let maxUndo = 20;
+
+let pendingImage = null;
+let pendingImgPos = { x: 50, y: 100, width: 300, height: 200 };
+let currentPhotoScale = 0.7;
+let maxYWritten = 50;
+
+function initMoleskineSelect() {
+  const select = document.getElementById("moleskinePlaceSelect");
+  if(!select || select.options.length > 1) return;
+  data.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p.id;
+    opt.textContent = p.nombre;
+    select.appendChild(opt);
+  });
+}
+
+function saveCanvasState() {
+  if(!ctx) return;
+  if(undoStack.length >= maxUndo) undoStack.shift();
+  undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+}
+
+function undoLastStroke() {
+  if(!ctx || undoStack.length === 0) return;
+  const previousState = undoStack.pop();
+  ctx.putImageData(previousState, 0, 0);
+}
 
 function setTool(tool) {
   currentTool = tool;
-  document.getElementById("tool-pen").style.background = tool === 'pen' ? 'var(--accent)' : '#333';
-  document.getElementById("tool-pen").style.color = tool === 'pen' ? '#000' : '#fff';
-
-  document.getElementById("tool-watercolor").style.background = tool === 'watercolor' ? 'var(--accent)' : '#333';
-  document.getElementById("tool-watercolor").style.color = tool === 'watercolor' ? '#000' : '#fff';
-
-  document.getElementById("tool-eraser").style.background = tool === 'eraser' ? 'var(--accent)' : '#333';
-  document.getElementById("tool-eraser").style.color = tool === 'eraser' ? '#000' : '#fff';
+  document.querySelectorAll(".moleskine-tool-btn").forEach(b => b.classList.remove("active"));
+  const btn = document.getElementById(`tool-${tool}`);
+  if(btn) btn.classList.add("active");
   
   if(tool === 'pen') {
     currentColor = "#000000";
-    if(ctx) ctx.globalAlpha = 1.0;
+    currentSize = 4;
+  } else if(tool === 'marker') {
+    currentColor = "#1e293b";
+    currentSize = 8;
+  } else if(tool === 'pencil') {
+    currentColor = "#334155";
+    currentSize = 3;
   } else if(tool === 'watercolor') {
-    currentColor = "#f7a8b8"; 
-    if(ctx) ctx.globalAlpha = 0.25;  
+    currentColor = "#3b82f6";
+    currentSize = 16;
+  } else if(tool === 'highlighter') {
+    currentColor = "#fef08a";
+    currentSize = 24;
   } else if(tool === 'eraser') {
-    if(ctx) ctx.globalAlpha = 1.0;
+    currentSize = 20;
   }
+  document.getElementById("moleskineSize").value = currentSize;
 }
 
 function setColor(color) {
   currentColor = color;
-  if(currentTool === 'watercolor' && ctx) ctx.globalAlpha = 0.25;
+  document.getElementById("moleskineColorPicker").value = color;
 }
 
 function customColor(color) {
   currentColor = color;
-  if(currentTool === 'watercolor' && ctx) ctx.globalAlpha = 0.25;
 }
 
 function setSize(size) {
-  currentSize = size;
+  currentSize = parseFloat(size);
 }
 
 if(canvas) {
@@ -996,26 +791,54 @@ if(canvas) {
 
 function startDrawing(e) {
   if(!ctx) return;
+  saveCanvasState();
   isDrawing = true;
   ctx.beginPath();
   const rect = canvas.getBoundingClientRect();
-  ctx.moveTo((e.clientX - rect.left) * (canvas.width / rect.width), (e.clientY - rect.top) * (canvas.height / rect.height));
+  const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+  const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+  const x = (clientX - rect.left) * (canvas.width / rect.width);
+  const y = (clientY - rect.top) * (canvas.height / rect.height);
+  
+  if(y > maxYWritten) maxYWritten = y;
+  ctx.moveTo(x, y);
 }
 
 function draw(e) {
   if(!isDrawing || !ctx) return;
   const rect = canvas.getBoundingClientRect();
-  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+  const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+  const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+  const x = (clientX - rect.left) * (canvas.width / rect.width);
+  const y = (clientY - rect.top) * (canvas.height / rect.height);
+
+  if(y > maxYWritten) maxYWritten = y;
 
   ctx.lineWidth = currentSize;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
+  ctx.shadowBlur = 0;
 
-  if(currentTool === 'eraser') {
-    ctx.strokeStyle = "#fcfbf7"; 
-  } else {
+  if(currentTool === 'pen') {
+    ctx.globalAlpha = 1.0;
     ctx.strokeStyle = currentColor;
+  } else if(currentTool === 'marker') {
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = currentColor;
+  } else if(currentTool === 'pencil') {
+    ctx.globalAlpha = 0.55;
+    ctx.strokeStyle = currentColor;
+  } else if(currentTool === 'watercolor') {
+    ctx.globalAlpha = 0.18;
+    ctx.shadowBlur = 4;
+    ctx.shadowColor = currentColor;
+    ctx.strokeStyle = currentColor;
+  } else if(currentTool === 'highlighter') {
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = currentColor;
+  } else if(currentTool === 'eraser') {
+    ctx.globalAlpha = 1.0;
+    ctx.strokeStyle = "#fcfbf7";
   }
 
   ctx.lineTo(x, y);
@@ -1023,13 +846,32 @@ function draw(e) {
 }
 
 function stopDrawing() {
+  if(!isDrawing) return;
   isDrawing = false;
+  if(ctx) {
+    ctx.globalAlpha = 1.0;
+    ctx.shadowBlur = 0;
+  }
 }
 
 function clearCanvas() {
   if(!ctx || !canvas) return;
+  saveCanvasState();
   ctx.fillStyle = "#fcfbf7";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Dibujar pauta tenue de cuaderno de notas
+  ctx.strokeStyle = "#e2e8f0";
+  ctx.lineWidth = 1;
+  ctx.globalAlpha = 0.6;
+  for(let y = 40; y < canvas.height; y += 28) {
+    ctx.beginPath();
+    ctx.moveTo(30, y);
+    ctx.lineTo(canvas.width - 30, y);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1.0;
+  maxYWritten = 50;
 }
 
 function handleFotoGPS(event) {
@@ -1040,23 +882,57 @@ function handleFotoGPS(event) {
   reader.onload = function(e) {
     const img = new Image();
     img.onload = function() {
-      if(ctx && canvas) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      pendingImage = img;
+      const targetWidth = canvas.width * 0.7;
+      const aspect = img.height / img.width;
+      const targetHeight = targetWidth * aspect;
+      const targetY = Math.min(maxYWritten + 30, canvas.height - targetHeight - 20);
+
+      pendingImgPos = { x: (canvas.width - targetWidth) / 2, y: targetY, width: targetWidth, height: targetHeight };
+      document.getElementById("photoControls").style.display = "flex";
+      renderPendingImage();
     };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 
   if (navigator.geolocation) {
-    document.getElementById("gpsStatus").innerText = "Obteniendo GPS...";
+    document.getElementById("gpsStatus").innerText = "Obteniendo ubicación GPS...";
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         currentCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        document.getElementById("gpsStatus").innerText = `📍 Ubicación guardada: ${currentCoords.lat.toFixed(5)}, ${currentCoords.lng.toFixed(5)}`;
+        document.getElementById("gpsStatus").innerText = `📍 Coordenadas guardadas: ${currentCoords.lat.toFixed(5)}, ${currentCoords.lng.toFixed(5)}`;
         document.getElementById("btnCalendar").style.display = "block";
       },
       () => { document.getElementById("gpsStatus").innerText = "📍 GPS no disponible."; }
     );
   }
+}
+
+function renderPendingImage() {
+  if(!pendingImage || !ctx) return;
+  saveCanvasState();
+  ctx.drawImage(pendingImage, pendingImgPos.x, pendingImgPos.y, pendingImgPos.width, pendingImgPos.height);
+}
+
+function updatePhotoScale(scaleVal) {
+  if(!pendingImage) return;
+  undoLastStroke();
+  currentPhotoScale = parseFloat(scaleVal);
+  const targetWidth = canvas.width * currentPhotoScale;
+  const aspect = pendingImage.height / pendingImage.width;
+  const targetHeight = targetWidth * aspect;
+  
+  pendingImgPos.width = targetWidth;
+  pendingImgPos.height = targetHeight;
+  pendingImgPos.x = (canvas.width - targetWidth) / 2;
+  renderPendingImage();
+}
+
+function confirmPhotoPlacement() {
+  document.getElementById("photoControls").style.display = "none";
+  maxYWritten = pendingImgPos.y + pendingImgPos.height + 20;
+  pendingImage = null;
 }
 
 function switchTab(tab) {
@@ -1066,7 +942,9 @@ function switchTab(tab) {
     if(resCount) resCount.style.display = "none";
     
     document.getElementById("moleskineSection").style.display = "block";
-    clearCanvas();
+    initMoleskineSelect();
+    if(undoStack.length === 0) clearCanvas();
+    renderMoleskineLibrary();
   }
 }
 
@@ -1078,14 +956,89 @@ function exitMoleskine() {
 }
 
 function saveMoleskineNote() {
-  alert("¡Nota Moleskine lista para exportar!");
+  const title = document.getElementById("moleskineTitleInput").value.trim() || `Nota Moleskine ${new Date().toLocaleDateString()}`;
+  const placeId = document.getElementById("moleskinePlaceSelect").value;
+  const dataUrl = canvas.toDataURL("image/png");
+
+  const noteEntry = {
+    id: "moleskine_" + Date.now(),
+    title,
+    placeId,
+    date: new Date().toLocaleString(),
+    image: dataUrl,
+    coords: currentCoords
+  };
+
+  window.moleskineLibrary.unshift(noteEntry);
+  localStorage.setItem("moleskine_saved_notes", JSON.stringify(window.moleskineLibrary));
+  if(window.saveToFirebase) window.saveToFirebase('moleskine_saved_notes', window.moleskineLibrary);
+
+  alert("¡Nota Moleskine guardada con éxito en tu biblioteca!");
+  renderMoleskineLibrary();
+}
+
+function renderMoleskineLibrary() {
+  const container = document.getElementById("savedNotesContainer");
+  if(!container) return;
+  
+  if(!window.moleskineLibrary || window.moleskineLibrary.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted); font-size:0.85rem; italic;">Aún no tienes notas guardadas en tu biblioteca Moleskine.</p>';
+    return;
+  }
+
+  let html = "";
+  window.moleskineLibrary.forEach(note => {
+    const linkedPlace = data.find(p => p.id === note.placeId);
+    const placeName = linkedPlace ? `📍 ${linkedPlace.nombre}` : 'Nota General';
+    const gpsText = note.coords ? ` | 📍 GPS: ${note.coords.lat.toFixed(4)}, ${note.coords.lng.toFixed(4)}` : '';
+
+    html += `
+      <div class="saved-note-card">
+        <div>
+          <strong style="color:#fff; font-size:0.95rem;">${escapeHtml(note.title)}</strong>
+          <div style="font-size:0.78rem; color:var(--muted); margin-top:2px;">
+            ${escapeHtml(placeName)} · ${escapeHtml(note.date)} ${gpsText}
+          </div>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button onclick="loadSavedNote('${note.id}')" style="background:#2563eb; color:#fff; border:none; padding:5px 9px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.8rem;">📂 Cargar</button>
+          <button onclick="deleteSavedNote('${note.id}')" style="background:#ef4444; color:#fff; border:none; padding:5px 9px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.8rem;">🗑️</button>
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+function loadSavedNote(id) {
+  const note = window.moleskineLibrary.find(n => n.id === id);
+  if(!note || !ctx) return;
+
+  const img = new Image();
+  img.onload = function() {
+    saveCanvasState();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+    document.getElementById("moleskineTitleInput").value = note.title;
+    if(note.placeId) document.getElementById("moleskinePlaceSelect").value = note.placeId;
+    if(note.coords) currentCoords = note.coords;
+    alert(`Nota "${note.title}" cargada en el cuaderno.`);
+  };
+  img.src = note.image;
+}
+
+function deleteSavedNote(id) {
+  window.moleskineLibrary = window.moleskineLibrary.filter(n => n.id !== id);
+  localStorage.setItem("moleskine_saved_notes", JSON.stringify(window.moleskineLibrary));
+  if(window.saveToFirebase) window.saveToFirebase('moleskine_saved_notes', window.moleskineLibrary);
+  renderMoleskineLibrary();
 }
 
 function exportToCalendar() {
-  const text = document.getElementById("moleskineText").value || "Nota Moleskine";
+  const titleText = document.getElementById("moleskineTitleInput").value || "Nota Moleskine";
   const gpsText = currentCoords ? `GPS: https://maps.google.com/?q=${currentCoords.lat},${currentCoords.lng}` : "";
-  const title = encodeURIComponent("📓 Moleskine: " + text.substring(0, 30));
-  const details = encodeURIComponent(`${text}\n\n${gpsText}`);
+  const title = encodeURIComponent("📓 Moleskine: " + titleText);
+  const details = encodeURIComponent(`Nota guardada en el Cuaderno Moleskine.\n\n${gpsText}`);
   
   const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}`;
   window.open(gcalUrl, '_blank');
