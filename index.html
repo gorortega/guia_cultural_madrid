@@ -141,13 +141,13 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
 .form-group textarea{height:160px;resize:vertical;line-height:1.4}
 .modal-buttons{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 
-/* ESTILOS MOLESKINE OPTIMIZADOS CON SCROLL BIDIRECCIONAL Y ZOOM ESTABLE */
-.moleskine-container{max-width:900px;margin:0 auto;background:#202c38;border-radius:12px;padding:15px;border:1px solid #3f5162;width:100%;box-sizing:border-box;}
+/* ESTILOS MOLESKINE CON SCROLL BIDIRECCIONAL REAL */
+.moleskine-container{max-width:100%;margin:0 auto;background:#202c38;border-radius:12px;padding:15px;border:1px solid #3f5162;width:100%;box-sizing:border-box;}
 .moleskine-toolbar{background:#18212b;padding:10px;border-radius:8px;border:1px solid #3f5162;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:sticky;top:0;z-index:10;}
 .moleskine-tool-btn{padding:6px 12px;border-radius:6px;border:1px solid #3f5162;background:#263442;color:#fff;cursor:pointer;font-weight:bold;font-size:0.85rem}
 .moleskine-tool-btn.active{background:var(--accent);color:#000;border-color:#fff}
-.folio-wrapper{background:#202c38;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);overflow:auto;max-height:80vh;border:1px solid #3f5162;position:relative;width:100%;touch-action:auto;}
-.canvas-inner-scaler{transform-origin:0 0;display:inline-block;background:#fcfbf7;transition:transform 0.1s ease;}
+.folio-wrapper{background:#202c38;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);overflow:scroll;-webkit-overflow-scrolling:touch;max-height:80vh;border:1px solid #3f5162;position:relative;width:100%;}
+.canvas-inner-scaler{display:inline-block;background:#fcfbf7;}
 #moleskineCanvas{display:block;background:#fcfbf7;touch-action:none;cursor:crosshair;}
 .saved-notes-list{margin-top:15px;background:#18212b;padding:12px;border-radius:8px;border:1px solid #3f5162}
 .saved-note-card{background:#263442;padding:10px 12px;border-radius:6px;border:1px solid #3f5162;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -266,7 +266,7 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     <input type="text" id="moleskineTitleInput" placeholder="Título de la nota (ej. Nota Prado)..." style="width:100%; padding:7px 10px; border-radius:6px; border:1px solid #3f5162; background:#18212b; color:#fff; font-size:0.9rem;">
   </div>
 
-  <!-- Barra de Herramientas con Control de Zoom -->
+  <!-- Barra de Herramientas -->
   <div class="moleskine-toolbar">
     <button onclick="setTool('pen')" id="tool-pen" class="moleskine-tool-btn active">✒️ Pluma</button>
     <button onclick="setTool('pencil')" id="tool-pencil" class="moleskine-tool-btn">✏️ Lápiz</button>
@@ -290,14 +290,6 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
       <option value="28">Brocha Acuarela</option>
     </select>
 
-    <!-- Controles de Zoom -->
-    <div style="display:flex; align-items:center; gap:4px; background:#263442; padding:3px 6px; border-radius:6px; border:1px solid #3f5162;">
-      <span style="font-size:0.75rem; color:var(--muted);">Zoom:</span>
-      <button onclick="changeZoom(-0.2)" class="moleskine-tool-btn" style="padding:2px 6px; font-size:0.8rem;">-</button>
-      <span id="zoomLevelText" style="font-size:0.8rem; min-width:38px; text-align:center;">100%</span>
-      <button onclick="changeZoom(0.2)" class="moleskine-tool-btn" style="padding:2px 6px; font-size:0.8rem;">+</button>
-    </div>
-
     <label style="background:#3b82f6; color:white; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.80rem;">
       📷 Foto + GPS
       <input type="file" accept="image/*" capture="environment" onchange="handleFotoGPS(event)" style="display:none;">
@@ -315,19 +307,19 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     </div>
     <div style="display:flex; align-items:center; gap:6px;">
       <span style="font-size:0.8rem;">Posición X (Horiz.):</span>
-      <input type="range" id="photoPosX" min="0" max="500" step="10" value="50" oninput="updatePhotoPosX(this.value)">
+      <input type="range" id="photoPosX" min="0" max="800" step="10" value="50" oninput="updatePhotoPosX(this.value)">
     </div>
     <div style="display:flex; align-items:center; gap:6px;">
       <span style="font-size:0.8rem;">Posición Y (Vert.):</span>
-      <input type="range" id="photoPosY" min="10" max="3200" step="10" value="100" oninput="updatePhotoPosY(this.value)">
+      <input type="range" id="photoPosY" min="10" max="5500" step="10" value="100" oninput="updatePhotoPosY(this.value)">
     </div>
     <button onclick="confirmPhotoPlacement()" style="background:#10b981; border:none; color:#fff; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✓ Fijar Foto en el Papel</button>
   </div>
 
-  <!-- Contenedor del Folio con Scroll Bidireccional y Zoom -->
+  <!-- Contenedor del Folio con Scroll Bidireccional (1400px x 6000px) -->
   <div class="folio-wrapper" id="folioWrapper">
     <div class="canvas-inner-scaler" id="canvasScaler">
-      <canvas id="moleskineCanvas" width="900" height="4000"></canvas>
+      <canvas id="moleskineCanvas" width="1400" height="6000"></canvas>
     </div>
   </div>
 
@@ -994,7 +986,7 @@ document.getElementById("userNotesModal").addEventListener("click",e=>{if(e.targ
 
 renderContent();
 
-/* ---------- LÓGICA MOLESKINE UNIFICADA CON ZOOM DE BOTONES Y SCROLL BIDIRECCIONAL ---------- */
+/* ---------- LÓGICA MOLESKINE CON DIMENSIONES AMPLIADAS (1400px x 6000px) ---------- */
 let canvas = document.getElementById("moleskineCanvas");
 let ctx = canvas ? canvas.getContext("2d") : null;
 let isDrawing = false;
@@ -1008,13 +1000,6 @@ let undoStack = [];
 let pendingImage = null;
 let pendingImgPos = { x: 50, y: 100, width: 350, height: 250 };
 let maxYWritten = 50;
-let currentZoom = 1.0;
-
-function changeZoom(delta) {
-  currentZoom = Math.max(0.6, Math.min(2.5, currentZoom + delta));
-  document.getElementById("zoomLevelText").innerText = Math.round(currentZoom * 100) + "%";
-  document.getElementById("canvasScaler").style.transform = `scale(${currentZoom})`;
-}
 
 function drawGridBackground() {
   if(!ctx || !canvas) return;
