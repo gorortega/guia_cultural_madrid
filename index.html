@@ -141,7 +141,7 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
 .form-group textarea{height:160px;resize:vertical;line-height:1.4}
 .modal-buttons{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 
-/* MOLESKINE MULTIPÁGINA CON MODO CONMUTADOR */
+/* MOLESKINE MULTIPÁGINA CON POSICIONADO DE FOTO Y DESHACER CORREGIDO */
 .moleskine-container{max-width:100%;margin:0 auto;background:#202c38;border-radius:12px;padding:12px;border:1px solid #3f5162;width:100%;box-sizing:border-box;}
 .moleskine-toolbar{background:#18212b;padding:10px;border-radius:8px;border:1px solid #3f5162;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:sticky;top:0;z-index:100;}
 .moleskine-tool-btn{padding:6px 12px;border-radius:6px;border:1px solid #3f5162;background:#263442;color:#fff;cursor:pointer;font-weight:bold;font-size:0.85rem}
@@ -307,11 +307,19 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     <button onclick="undoLastStroke()" class="moleskine-tool-btn" style="background:#4b5563;">↩️ Deshacer</button>
   </div>
 
-  <!-- Capa de Previsualización y Posicionado de Foto -->
+  <!-- Capa de Previsualización y Posicionado Completo de la Foto (Escala, X, Y) -->
   <div id="photoControls" style="display:none; background:#18212b; padding:10px; border-radius:6px; margin-bottom:10px; align-items:center; gap:12px; border:1px solid #3f5162; flex-wrap:wrap;">
     <div style="display:flex; align-items:center; gap:6px;">
-      <span style="font-size:0.8rem;">Tamaño Foto:</span>
-      <input type="range" id="photoScale" min="0.15" max="1.0" step="0.05" value="0.45" oninput="updatePhotoPreview()">
+      <span style="font-size:0.8rem;">Tamaño:</span>
+      <input type="range" id="photoScale" min="0.1" max="1.0" step="0.05" value="0.45" oninput="updatePhotoPreview()">
+    </div>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <span style="font-size:0.8rem;">Posición X (Horiz.):</span>
+      <input type="range" id="photoPosX" min="0" max="600" step="10" value="50" oninput="updatePhotoPreview()">
+    </div>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <span style="font-size:0.8rem;">Posición Y (Vert.):</span>
+      <input type="range" id="photoPosY" min="0" max="900" step="10" value="50" oninput="updatePhotoPreview()">
     </div>
     <button onclick="confirmPhotoPlacement()" style="background:#10b981; border:none; color:#fff; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✓ Fijar Foto en el Papel</button>
     <button onclick="cancelPhotoPlacement()" style="background:#ef4444; border:none; color:#fff; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✕ Cancelar</button>
@@ -988,16 +996,17 @@ document.getElementById("userNotesModal").addEventListener("click",e=>{if(e.targ
 
 renderContent();
 
-/* ---------- LÓGICA MOLESKINE MULTIPÁGINA CON MODO CONMUTADOR ---------- */
+/* ---------- LÓGICA MOLESKINE MULTIPÁGINA CON DESHACER Y POSICIONADO DE FOTO ---------- */
 let pagesData = [];
 let currentTool = "pen";
 let currentColor = "#000000";
 let currentSize = 6;
-let isInteractionModeDraw = true; // true = Dibujar, false = Mover hoja
+let isInteractionModeDraw = true; 
 let currentCoords = null;
 let currentActiveNoteId = null;
 let pendingImage = null;
 let undoStacks = {}; 
+let basePageImages = {}; // Almacena el dibujo base antes de ajustar una foto
 
 function toggleInteractionMode() {
   isInteractionModeDraw = !isInteractionModeDraw;
@@ -1078,7 +1087,10 @@ function initCanvasEvents(canvas, pageId) {
   }
 
   canvas.addEventListener("pointerdown", (e) => {
-    if(!isInteractionModeDraw) return;
+    // Si el puntero es lápiz táctil/S-Pen, permite dibujar siempre
+    const isPen = e.pointerType === "pen";
+    if(!isInteractionModeDraw && !isPen) return;
+
     saveState();
     isDrawing = true;
     ctx.beginPath();
@@ -1089,7 +1101,9 @@ function initCanvasEvents(canvas, pageId) {
   });
 
   canvas.addEventListener("pointermove", (e) => {
-    if(!isDrawing || !isInteractionModeDraw) return;
+    const isPen = e.pointerType === "pen";
+    if(!isDrawing || (!isInteractionModeDraw && !isPen)) return;
+
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (canvas.width / rect.width);
     const y = (e.clientY - rect.top) * (canvas.height / rect.height);
@@ -1151,6 +1165,7 @@ function startNewNote() {
   document.getElementById("pagesStack").innerHTML = "";
   pagesData = [];
   undoStacks = {};
+  basePageImages = {};
   currentCoords = null;
   addNewPageBlock();
   document.getElementById("btnCalendar").style.display = "none";
@@ -1166,6 +1181,14 @@ function handleFotoGPS(event) {
     const img = new Image();
     img.onload = function() {
       pendingImage = img;
+      if(pagesData.length > 0) {
+        const lastPageId = pagesData[pagesData.length - 1].id;
+        const canvas = document.getElementById(lastPageId);
+        if(canvas) {
+          const ctx = canvas.getContext("2d");
+          basePageImages[lastPageId] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        }
+      }
       document.getElementById("photoControls").style.display = "flex";
       updatePhotoPreview();
     };
@@ -1194,16 +1217,28 @@ function updatePhotoPreview() {
   const ctx = canvas.getContext("2d");
 
   const scale = parseFloat(document.getElementById("photoScale").value);
+  const posX = parseFloat(document.getElementById("photoPosX").value);
+  const posY = parseFloat(document.getElementById("photoPosY").value);
+
   const targetWidth = canvas.width * scale;
   const aspect = pendingImage.height / pendingImage.width;
   const targetHeight = targetWidth * aspect;
 
-  drawGridBackground(ctx, canvas);
-  ctx.drawImage(pendingImage, 50, 50, targetWidth, targetHeight);
+  if(basePageImages[lastPageId]) {
+    ctx.putImageData(basePageImages[lastPageId], 0, 0);
+  } else {
+    drawGridBackground(ctx, canvas);
+  }
+
+  ctx.drawImage(pendingImage, posX, posY, targetWidth, targetHeight);
 }
 
 function confirmPhotoPlacement() {
   document.getElementById("photoControls").style.display = "none";
+  if(pagesData.length > 0) {
+    const lastPageId = pagesData[pagesData.length - 1].id;
+    delete basePageImages[lastPageId];
+  }
   pendingImage = null;
 }
 
@@ -1211,7 +1246,12 @@ function cancelPhotoPlacement() {
   document.getElementById("photoControls").style.display = "none";
   if(pagesData.length > 0) {
     const lastPageId = pagesData[pagesData.length - 1].id;
-    clearPageCanvas(lastPageId);
+    const canvas = document.getElementById(lastPageId);
+    if(canvas && basePageImages[lastPageId]) {
+      const ctx = canvas.getContext("2d");
+      ctx.putImageData(basePageImages[lastPageId], 0, 0);
+      delete basePageImages[lastPageId];
+    }
   }
   pendingImage = null;
 }
