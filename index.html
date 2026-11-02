@@ -141,17 +141,18 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
 .form-group textarea{height:160px;resize:vertical;line-height:1.4}
 .modal-buttons{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 
-/* MOLESKINE MULTIPÁGINA CON POSICIONADO DE FOTO Y DESHACER CORREGIDO */
+/* MOLESKINE CON CONTROLES LOCALES Y RECORTE DE FOTO */
 .moleskine-container{max-width:100%;margin:0 auto;background:#202c38;border-radius:12px;padding:12px;border:1px solid #3f5162;width:100%;box-sizing:border-box;}
 .moleskine-toolbar{background:#18212b;padding:10px;border-radius:8px;border:1px solid #3f5162;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:sticky;top:0;z-index:100;}
 .moleskine-tool-btn{padding:6px 12px;border-radius:6px;border:1px solid #3f5162;background:#263442;color:#fff;cursor:pointer;font-weight:bold;font-size:0.85rem}
 .moleskine-tool-btn.active{background:var(--accent);color:#000;border-color:#fff}
-.mode-toggle-btn{background:#eab308;color:#000;font-weight:bold;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;}
+.mode-toggle-btn{background:#eab308;color:#000;font-weight:bold;padding:4px 10px;border-radius:5px;border:none;cursor:pointer;font-size:0.78rem;}
 .mode-toggle-btn.pan-mode{background:#22c55e;color:#fff;}
 
 .pages-stack{display:flex;flex-direction:column;gap:20px;width:100%;align-items:center;}
-.page-block{background:#fcfbf7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4);border:1px solid #d1d5db;position:relative;width:100%;max-width:900px;overflow:hidden;}
-.page-header{background:#e5e7eb;color:#374151;padding:4px 10px;font-size:0.75rem;font-weight:bold;display:flex;justify-content:space-between;align-items:center;}
+.page-block{background:#fcfbf7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4);border:2px solid #3f5162;position:relative;width:100%;max-width:900px;overflow:hidden;transition:border-color 0.2s;}
+.page-block.active-page{border-color:#3b82f6;}
+.page-header{background:#d1d5db;color:#111827;padding:6px 10px;font-size:0.8rem;font-weight:bold;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
 .canvas-holder{position:relative;width:100%;background:#fcfbf7;}
 .moleskine-page-canvas{display:block;background:#fcfbf7;width:100%;height:auto;}
 .moleskine-page-canvas.drawing-active{touch-action:none;cursor:crosshair;}
@@ -162,6 +163,11 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
 
 .saved-notes-list{margin-top:20px;background:#18212b;padding:12px;border-radius:8px;border:1px solid #3f5162}
 .saved-note-card{background:#263442;padding:10px 12px;border-radius:6px;border:1px solid #3f5162;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
+
+/* MODAL EDITOR RECORTE DE FOTO */
+.crop-modal-content{background:#18212b;border:1px solid #597083;border-radius:12px;padding:16px;max-width:95vw;width:550px;color:#fff;display:flex;flex-direction:column;gap:12px;}
+.crop-canvas-holder{max-height:50vh;overflow:auto;background:#000;display:flex;justify-content:center;align-items:center;border:1px dashed #597083;border-radius:8px;padding:10px;}
+#cropCanvas{max-width:100%;height:auto;cursor:crosshair;touch-action:none;}
 
 @media(max-width:760px){
   .grid{grid-template-columns:1fr}
@@ -269,14 +275,11 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
   </div>
 
   <div style="margin-bottom:10px;">
-    <input type="text" id="moleskineTitleInput" placeholder="Título de la nota (ej. Nota Prado)..." style="width:100%; padding:7px 10px; border-radius:6px; border:1px solid #3f5162; background:#18212b; color:#fff; font-size:0.9rem;">
+    <input type="text" id="moleskineTitleInput" placeholder="Título de la nota (ej. Apuntes Sorolla)..." style="width:100%; padding:7px 10px; border-radius:6px; border:1px solid #3f5162; background:#18212b; color:#fff; font-size:0.9rem;">
   </div>
 
   <!-- Barra de Herramientas Principal -->
   <div class="moleskine-toolbar">
-    <!-- Botón Conmutador de Modo -->
-    <button id="btnInteractionMode" class="mode-toggle-btn" onclick="toggleInteractionMode()">✏️ Modo: DIBUJAR</button>
-
     <button onclick="setTool('pen')" id="tool-pen" class="moleskine-tool-btn active">✒️ Pluma</button>
     <button onclick="setTool('pencil')" id="tool-pencil" class="moleskine-tool-btn">✏️ Lápiz</button>
     <button onclick="setTool('watercolor')" id="tool-watercolor" class="moleskine-tool-btn">🖌️ Acuarela</button>
@@ -300,28 +303,29 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     </select>
 
     <label style="background:#3b82f6; color:white; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.80rem;">
-      📷 Foto + GPS
+      📷 Foto + GPS (Pág. Activa)
       <input type="file" accept="image/*" capture="environment" onchange="handleFotoGPS(event)" style="display:none;">
     </label>
 
     <button onclick="undoLastStroke()" class="moleskine-tool-btn" style="background:#4b5563;">↩️ Deshacer</button>
   </div>
 
-  <!-- Capa de Previsualización y Posicionado Completo de la Foto (Escala, X, Y) -->
+  <!-- Capa Ajuste de Foto sobre Página Activa -->
   <div id="photoControls" style="display:none; background:#18212b; padding:10px; border-radius:6px; margin-bottom:10px; align-items:center; gap:12px; border:1px solid #3f5162; flex-wrap:wrap;">
+    <span style="color:var(--accent); font-weight:bold; font-size:0.85rem;" id="photoTargetLabel">Ajustando foto en Página 1:</span>
     <div style="display:flex; align-items:center; gap:6px;">
       <span style="font-size:0.8rem;">Tamaño:</span>
       <input type="range" id="photoScale" min="0.1" max="1.0" step="0.05" value="0.45" oninput="updatePhotoPreview()">
     </div>
     <div style="display:flex; align-items:center; gap:6px;">
-      <span style="font-size:0.8rem;">Posición X (Horiz.):</span>
+      <span style="font-size:0.8rem;">Posición X:</span>
       <input type="range" id="photoPosX" min="0" max="600" step="10" value="50" oninput="updatePhotoPreview()">
     </div>
     <div style="display:flex; align-items:center; gap:6px;">
-      <span style="font-size:0.8rem;">Posición Y (Vert.):</span>
+      <span style="font-size:0.8rem;">Posición Y:</span>
       <input type="range" id="photoPosY" min="0" max="900" step="10" value="50" oninput="updatePhotoPreview()">
     </div>
-    <button onclick="confirmPhotoPlacement()" style="background:#10b981; border:none; color:#fff; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✓ Fijar Foto en el Papel</button>
+    <button onclick="confirmPhotoPlacement()" style="background:#10b981; border:none; color:#fff; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✓ Fijar Foto en Papel</button>
     <button onclick="cancelPhotoPlacement()" style="background:#ef4444; border:none; color:#fff; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✕ Cancelar</button>
   </div>
 
@@ -343,6 +347,21 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
   <div class="saved-notes-list">
     <h3 style="color:var(--accent); margin-bottom:8px; font-size:1rem;">📚 Biblioteca de Notas Moleskine</h3>
     <div id="savedNotesContainer"></div>
+  </div>
+</div>
+
+<!-- MODAL CROP/RECORTE RÁPIDO DE FOTO -->
+<div class="modal-overlay" id="cropModal">
+  <div class="crop-modal-content">
+    <h3 style="margin:0; font-size:1.1rem; color:var(--accent);">✂️ Recortar imagen sobrante</h3>
+    <p style="font-size:0.8rem; color:var(--muted); margin:0;">Arrastra sobre la imagen para seleccionar solo el objeto de interés (ej. la carreta de caballos):</p>
+    <div class="crop-canvas-holder">
+      <canvas id="cropCanvas"></canvas>
+    </div>
+    <div style="display:flex; justify-content:space-between; gap:8px; margin-top:5px;">
+      <button onclick="skipCropUseFull()" style="background:#4b5563; color:white; border:none; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">Usar Foto Entera</button>
+      <button onclick="applyCrop()" style="background:#10b981; color:white; border:none; padding:8px 14px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✓ Aplicar Recorte</button>
+    </div>
   </div>
 </div>
 
@@ -996,40 +1015,24 @@ document.getElementById("userNotesModal").addEventListener("click",e=>{if(e.targ
 
 renderContent();
 
-/* ---------- LÓGICA MOLESKINE MULTIPÁGINA CON DESHACER Y POSICIONADO DE FOTO ---------- */
+/* ---------- LÓGICA MOLESKINE MULTIPÁGINA AVANZADA ---------- */
 let pagesData = [];
+let activePageId = null;
 let currentTool = "pen";
 let currentColor = "#000000";
 let currentSize = 6;
-let isInteractionModeDraw = true; 
+let pageModes = {}; // Modo independiente por página (true = Draw, false = Pan)
 let currentCoords = null;
 let currentActiveNoteId = null;
-let pendingImage = null;
+
 let undoStacks = {}; 
-let basePageImages = {}; // Almacena el dibujo base antes de ajustar una foto
+let basePageImages = {}; 
 
-function toggleInteractionMode() {
-  isInteractionModeDraw = !isInteractionModeDraw;
-  const btn = document.getElementById("btnInteractionMode");
-  if(isInteractionModeDraw) {
-    btn.innerText = "✏️ Modo: DIBUJAR";
-    btn.className = "mode-toggle-btn";
-  } else {
-    btn.innerText = "✋ Modo: MOVER HOJA";
-    btn.className = "mode-toggle-btn pan-mode";
-  }
-  updateAllCanvasesMode();
-}
-
-function updateAllCanvasesMode() {
-  document.querySelectorAll(".moleskine-page-canvas").forEach(canvas => {
-    if(isInteractionModeDraw) {
-      canvas.className = "moleskine-page-canvas drawing-active";
-    } else {
-      canvas.className = "moleskine-page-canvas pan-active";
-    }
-  });
-}
+// Foto y recorte
+let loadedRawImage = null;
+let croppedImage = null;
+let cropSelection = { x: 0, y: 0, w: 0, h: 0 };
+let isCropping = false;
 
 function drawGridBackground(ctx, canvas) {
   ctx.save();
@@ -1048,23 +1051,54 @@ function drawGridBackground(ctx, canvas) {
   ctx.restore();
 }
 
+function setActivePage(pageId) {
+  activePageId = pageId;
+  document.querySelectorAll(".page-block").forEach(b => b.classList.remove("active-page"));
+  const currentBlock = document.getElementById("block_" + pageId);
+  if(currentBlock) currentBlock.classList.add("active-page");
+}
+
+function togglePageMode(pageId) {
+  pageModes[pageId] = !pageModes[pageId];
+  const btn = document.getElementById("btn_mode_" + pageId);
+  const canvas = document.getElementById(pageId);
+  if(pageModes[pageId]) {
+    btn.innerText = "✏️ Dibujar";
+    btn.className = "mode-toggle-btn";
+    if(canvas) canvas.className = "moleskine-page-canvas drawing-active";
+  } else {
+    btn.innerText = "✋ Mover";
+    btn.className = "mode-toggle-btn pan-mode";
+    if(canvas) canvas.className = "moleskine-page-canvas pan-active";
+  }
+}
+
 function addNewPageBlock() {
   const pageIndex = pagesData.length + 1;
   const pageId = "page_canvas_" + Date.now() + "_" + pageIndex;
   pagesData.push({ id: pageId, index: pageIndex });
   undoStacks[pageId] = [];
+  pageModes[pageId] = true; // Por defecto modo dibujar
 
   const stack = document.getElementById("pagesStack");
   const block = document.createElement("div");
   block.className = "page-block";
   block.id = "block_" + pageId;
+  block.onclick = () => setActivePage(pageId);
+
   block.innerHTML = `
     <div class="page-header">
-      <span>Página ${pageIndex}</span>
-      <button onclick="clearPageCanvas('${pageId}')" style="background:#ef4444; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:0.75rem;">🗑️ Limpiar Página</button>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span>Página ${pageIndex}</span>
+        <button id="btn_mode_${pageId}" class="mode-toggle-btn" onclick="event.stopPropagation(); togglePageMode('${pageId}')">✏️ Dibujar</button>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <button onclick="event.stopPropagation(); clearPageCanvas('${pageId}')" style="background:#eab308; color:black; border:none; padding:3px 8px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.75rem;">Limpiar</button>
+        <button onclick="event.stopPropagation(); deletePageBlock('${pageId}')" style="background:#ef4444; color:white; border:none; padding:3px 8px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.75rem;">🗑️ Eliminar</button>
+      </div>
     </div>
     <div class="canvas-holder">
-      <canvas id="${pageId}" class="moleskine-page-canvas ${isInteractionModeDraw ? 'drawing-active' : 'pan-active'}" width="900" height="1200"></canvas>
+      <canvas id="${pageId}" class="moleskine-page-canvas drawing-active" width="900" height="1200"></canvas>
     </div>
   `;
   stack.appendChild(block);
@@ -1074,6 +1108,24 @@ function addNewPageBlock() {
   drawGridBackground(ctx, canvas);
 
   initCanvasEvents(canvas, pageId);
+  setActivePage(pageId);
+}
+
+function deletePageBlock(pageId) {
+  if(pagesData.length <= 1) {
+    alert("Debe haber al menos 1 página en el cuaderno.");
+    return;
+  }
+  pagesData = pagesData.filter(p => p.id !== pageId);
+  delete undoStacks[pageId];
+  delete pageModes[pageId];
+  delete basePageImages[pageId];
+  const block = document.getElementById("block_" + pageId);
+  if(block) block.remove();
+
+  if(activePageId === pageId && pagesData.length > 0) {
+    setActivePage(pagesData[0].id);
+  }
 }
 
 function initCanvasEvents(canvas, pageId) {
@@ -1087,9 +1139,11 @@ function initCanvasEvents(canvas, pageId) {
   }
 
   canvas.addEventListener("pointerdown", (e) => {
-    // Si el puntero es lápiz táctil/S-Pen, permite dibujar siempre
+    setActivePage(pageId);
     const isPen = e.pointerType === "pen";
-    if(!isInteractionModeDraw && !isPen) return;
+    const isDrawMode = pageModes[pageId];
+
+    if(!isDrawMode && !isPen) return;
 
     saveState();
     isDrawing = true;
@@ -1102,7 +1156,9 @@ function initCanvasEvents(canvas, pageId) {
 
   canvas.addEventListener("pointermove", (e) => {
     const isPen = e.pointerType === "pen";
-    if(!isDrawing || (!isInteractionModeDraw && !isPen)) return;
+    const isDrawMode = pageModes[pageId];
+
+    if(!isDrawing || (!isDrawMode && !isPen)) return;
 
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (canvas.width / rect.width);
@@ -1135,12 +1191,13 @@ function clearPageCanvas(pageId) {
 }
 
 function undoLastStroke() {
-  if(pagesData.length === 0) return;
-  const lastPageId = pagesData[pagesData.length - 1].id;
-  const canvas = document.getElementById(lastPageId);
-  if(!canvas || !undoStacks[lastPageId] || undoStacks[lastPageId].length === 0) return;
+  const targetId = activePageId || (pagesData.length > 0 ? pagesData[0].id : null);
+  if(!targetId) return;
+
+  const canvas = document.getElementById(targetId);
+  if(!canvas || !undoStacks[targetId] || undoStacks[targetId].length === 0) return;
   const ctx = canvas.getContext("2d");
-  ctx.putImageData(undoStacks[lastPageId].pop(), 0, 0);
+  ctx.putImageData(undoStacks[targetId].pop(), 0, 0);
 }
 
 function setTool(tool) {
@@ -1166,12 +1223,14 @@ function startNewNote() {
   pagesData = [];
   undoStacks = {};
   basePageImages = {};
+  pageModes = {};
   currentCoords = null;
   addNewPageBlock();
   document.getElementById("btnCalendar").style.display = "none";
   document.getElementById("gpsStatus").innerText = "";
 }
 
+/* ---------- CÁMARA + EDITOR DE RECORTE RÁPIDO ---------- */
 function handleFotoGPS(event) {
   const file = event.target.files[0];
   if(!file) return;
@@ -1180,17 +1239,8 @@ function handleFotoGPS(event) {
   reader.onload = function(e) {
     const img = new Image();
     img.onload = function() {
-      pendingImage = img;
-      if(pagesData.length > 0) {
-        const lastPageId = pagesData[pagesData.length - 1].id;
-        const canvas = document.getElementById(lastPageId);
-        if(canvas) {
-          const ctx = canvas.getContext("2d");
-          basePageImages[lastPageId] = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        }
-      }
-      document.getElementById("photoControls").style.display = "flex";
-      updatePhotoPreview();
+      loadedRawImage = img;
+      openCropModal();
     };
     img.src = e.target.result;
   };
@@ -1209,10 +1259,121 @@ function handleFotoGPS(event) {
   }
 }
 
+function openCropModal() {
+  const cropCanvas = document.getElementById("cropCanvas");
+  const ctx = cropCanvas.getContext("2d");
+
+  cropCanvas.width = loadedRawImage.width;
+  cropCanvas.height = loadedRawImage.height;
+  ctx.drawImage(loadedRawImage, 0, 0);
+
+  cropSelection = { x: 0, y: 0, w: loadedRawImage.width, h: loadedRawImage.height };
+  document.getElementById("cropModal").style.display = "flex";
+
+  initCropEvents(cropCanvas);
+}
+
+function initCropEvents(cropCanvas) {
+  const ctx = cropCanvas.getContext("2d");
+
+  let startX = 0, startY = 0;
+
+  function drawCropOverlay() {
+    ctx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
+    ctx.drawImage(loadedRawImage, 0, 0);
+
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
+
+    ctx.clearRect(cropSelection.x, cropSelection.y, cropSelection.w, cropSelection.h);
+    ctx.drawImage(
+      loadedRawImage,
+      cropSelection.x, cropSelection.y, cropSelection.w, cropSelection.h,
+      cropSelection.x, cropSelection.y, cropSelection.w, cropSelection.h
+    );
+
+    ctx.strokeStyle = "#3b82f6";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(cropSelection.x, cropSelection.y, cropSelection.w, cropSelection.h);
+  }
+
+  cropCanvas.onpointerdown = (e) => {
+    isCropping = true;
+    const rect = cropCanvas.getBoundingClientRect();
+    startX = (e.clientX - rect.left) * (cropCanvas.width / rect.width);
+    startY = (e.clientY - rect.top) * (cropCanvas.height / rect.height);
+    cropSelection = { x: startX, y: startY, w: 0, h: 0 };
+  };
+
+  cropCanvas.onpointermove = (e) => {
+    if(!isCropping) return;
+    const rect = cropCanvas.getBoundingClientRect();
+    const curX = (e.clientX - rect.left) * (cropCanvas.width / rect.width);
+    const curY = (e.clientY - rect.top) * (cropCanvas.height / rect.height);
+
+    cropSelection.x = Math.min(startX, curX);
+    cropSelection.y = Math.min(startY, curY);
+    cropSelection.w = Math.abs(curX - startX);
+    cropSelection.h = Math.abs(curY - startY);
+
+    drawCropOverlay();
+  };
+
+  cropCanvas.onpointerup = () => { isCropping = false; };
+}
+
+function applyCrop() {
+  document.getElementById("cropModal").style.display = "none";
+  if(cropSelection.w < 20 || cropSelection.h < 20) {
+    croppedImage = loadedRawImage;
+  } else {
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = cropSelection.w;
+    tempCanvas.height = cropSelection.h;
+    const tCtx = tempCanvas.getContext("2d");
+    tCtx.drawImage(
+      loadedRawImage,
+      cropSelection.x, cropSelection.y, cropSelection.w, cropSelection.h,
+      0, 0, cropSelection.w, cropSelection.h
+    );
+    const img = new Image();
+    img.onload = () => {
+      croppedImage = img;
+      startPhotoPlacementOnActivePage();
+    };
+    img.src = tempCanvas.toDataURL("image/png");
+    return;
+  }
+  startPhotoPlacementOnActivePage();
+}
+
+function skipCropUseFull() {
+  document.getElementById("cropModal").style.display = "none";
+  croppedImage = loadedRawImage;
+  startPhotoPlacementOnActivePage();
+}
+
+function startPhotoPlacementOnActivePage() {
+  if(!activePageId) {
+    if(pagesData.length > 0) setActivePage(pagesData[0].id);
+    else addNewPageBlock();
+  }
+
+  const canvas = document.getElementById(activePageId);
+  if(canvas) {
+    const ctx = canvas.getContext("2d");
+    basePageImages[activePageId] = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  }
+
+  const pIdx = pagesData.findIndex(p => p.id === activePageId) + 1;
+  document.getElementById("photoTargetLabel").innerText = `Ajustando foto en Página ${pIdx}:`;
+  document.getElementById("photoControls").style.display = "flex";
+  updatePhotoPreview();
+}
+
 function updatePhotoPreview() {
-  if(!pendingImage || pagesData.length === 0) return;
-  const lastPageId = pagesData[pagesData.length - 1].id;
-  const canvas = document.getElementById(lastPageId);
+  if(!croppedImage || !activePageId) return;
+  const canvas = document.getElementById(activePageId);
   if(!canvas) return;
   const ctx = canvas.getContext("2d");
 
@@ -1221,39 +1382,37 @@ function updatePhotoPreview() {
   const posY = parseFloat(document.getElementById("photoPosY").value);
 
   const targetWidth = canvas.width * scale;
-  const aspect = pendingImage.height / pendingImage.width;
+  const aspect = croppedImage.height / croppedImage.width;
   const targetHeight = targetWidth * aspect;
 
-  if(basePageImages[lastPageId]) {
-    ctx.putImageData(basePageImages[lastPageId], 0, 0);
+  if(basePageImages[activePageId]) {
+    ctx.putImageData(basePageImages[activePageId], 0, 0);
   } else {
     drawGridBackground(ctx, canvas);
   }
 
-  ctx.drawImage(pendingImage, posX, posY, targetWidth, targetHeight);
+  ctx.drawImage(croppedImage, posX, posY, targetWidth, targetHeight);
 }
 
 function confirmPhotoPlacement() {
   document.getElementById("photoControls").style.display = "none";
-  if(pagesData.length > 0) {
-    const lastPageId = pagesData[pagesData.length - 1].id;
-    delete basePageImages[lastPageId];
-  }
-  pendingImage = null;
+  if(activePageId) delete basePageImages[activePageId];
+  croppedImage = null;
+  loadedRawImage = null;
 }
 
 function cancelPhotoPlacement() {
   document.getElementById("photoControls").style.display = "none";
-  if(pagesData.length > 0) {
-    const lastPageId = pagesData[pagesData.length - 1].id;
-    const canvas = document.getElementById(lastPageId);
-    if(canvas && basePageImages[lastPageId]) {
+  if(activePageId) {
+    const canvas = document.getElementById(activePageId);
+    if(canvas && basePageImages[activePageId]) {
       const ctx = canvas.getContext("2d");
-      ctx.putImageData(basePageImages[lastPageId], 0, 0);
-      delete basePageImages[lastPageId];
+      ctx.putImageData(basePageImages[activePageId], 0, 0);
+      delete basePageImages[activePageId];
     }
   }
-  pendingImage = null;
+  croppedImage = null;
+  loadedRawImage = null;
 }
 
 function switchTab(tab) {
