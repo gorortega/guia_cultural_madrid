@@ -141,14 +141,73 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
 .form-group textarea{height:160px;resize:vertical;line-height:1.4}
 .modal-buttons{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 
-/* ESTILOS MOLESKINE CON SCROLL BIDIRECCIONAL REAL */
+/* NUEVOS ESTILOS MOLESKINE CON PÁGINAS DINÁMICAS Y ZOOM GESTUAL */
 .moleskine-container{max-width:100%;margin:0 auto;background:#202c38;border-radius:12px;padding:15px;border:1px solid #3f5162;width:100%;box-sizing:border-box;}
-.moleskine-toolbar{background:#18212b;padding:10px;border-radius:8px;border:1px solid #3f5162;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:sticky;top:0;z-index:10;}
+.moleskine-toolbar{background:#18212b;padding:10px;border-radius:8px;border:1px solid #3f5162;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:sticky;top:0;z-index:20;}
 .moleskine-tool-btn{padding:6px 12px;border-radius:6px;border:1px solid #3f5162;background:#263442;color:#fff;cursor:pointer;font-weight:bold;font-size:0.85rem}
 .moleskine-tool-btn.active{background:var(--accent);color:#000;border-color:#fff}
-.folio-wrapper{background:#202c38;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);overflow:scroll;-webkit-overflow-scrolling:touch;max-height:80vh;border:1px solid #3f5162;position:relative;width:100%;}
-.canvas-inner-scaler{display:inline-block;background:#fcfbf7;}
-#moleskineCanvas{display:block;background:#fcfbf7;touch-action:none;cursor:crosshair;}
+
+.notebook-viewport{
+  background:#141c24;
+  border-radius:8px;
+  border:1px solid #3f5162;
+  overflow:hidden;
+  position:relative;
+  width:100%;
+  height:75vh;
+  touch-action:none;
+}
+.notebook-zoom-layer{
+  transform-origin:0 0;
+  transition:transform 0.05s ease-out;
+  padding:20px 10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:25px;
+}
+.moleskine-page-card{
+  background:#fcfbf7;
+  box-shadow:0 6px 18px rgba(0,0,0,0.4);
+  border-radius:4px;
+  border:1px solid #dcd6c8;
+  position:relative;
+}
+.moleskine-page-card canvas{
+  display:block;
+  background:transparent;
+  cursor:crosshair;
+  touch-action:none;
+}
+.page-header-tag{
+  position:absolute;
+  top:-22px;
+  left:0;
+  font-size:11px;
+  color:#9fc5e8;
+  font-weight:bold;
+  background:#18212b;
+  padding:2px 8px;
+  border-radius:4px 4px 0 0;
+  border:1px solid #3f5162;
+  border-bottom:none;
+}
+
+.zoom-indicator-pill{
+  position:absolute;
+  bottom:15px;
+  right:15px;
+  background:rgba(24,33,43,0.85);
+  color:#fff;
+  padding:5px 10px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:bold;
+  border:1px solid #3f5162;
+  pointer-events:none;
+  z-index:15;
+}
+
 .saved-notes-list{margin-top:15px;background:#18212b;padding:12px;border-radius:8px;border:1px solid #3f5162}
 .saved-note-card{background:#263442;padding:10px 12px;border-radius:6px;border:1px solid #3f5162;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
 
@@ -252,25 +311,27 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
   <div id="contentArea"></div>
 </div>
 
-<!-- SECCIÓN NOTAS MOLESKINE -->
+<!-- SECCIÓN NOTAS MOLESKINE DINÁMICAS CON GESTOS -->
 <div id="moleskineSection" style="display:none;" class="moleskine-container">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
-    <h2 style="color:var(--accent); font-family:serif; margin:0; font-size:1.3rem;">📓 Cuaderno Moleskine</h2>
-    <div style="display:flex; gap:6px;">
-      <button onclick="startNewNote()" style="background:#2563eb; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">➕ Nueva Nota</button>
-      <button onclick="exitMoleskine()" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">← Volver a Menú</button>
+    <h2 style="color:var(--accent); font-family:serif; margin:0; font-size:1.3rem;">📓 Cuaderno Moleskine Multipágina</h2>
+    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+      <button onclick="addNewPage()" style="background:#10b981; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">➕ Añadir Página</button>
+      <button onclick="resetZoom()" style="background:#4b5563; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">🔍 100% Zoom</button>
+      <button onclick="startNewNote()" style="background:#2563eb; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">🆕 Nueva Nota</button>
+      <button onclick="exitMoleskine()" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">← Volver</button>
     </div>
   </div>
 
   <div style="margin-bottom:10px;">
-    <input type="text" id="moleskineTitleInput" placeholder="Título de la nota (ej. Nota Prado)..." style="width:100%; padding:7px 10px; border-radius:6px; border:1px solid #3f5162; background:#18212b; color:#fff; font-size:0.9rem;">
+    <input type="text" id="moleskineTitleInput" placeholder="Título de la nota (ej. Apuntes Sorolla)..." style="width:100%; padding:7px 10px; border-radius:6px; border:1px solid #3f5162; background:#18212b; color:#fff; font-size:0.9rem;">
   </div>
 
   <!-- Barra de Herramientas -->
   <div class="moleskine-toolbar">
     <button onclick="setTool('pen')" id="tool-pen" class="moleskine-tool-btn active">✒️ Pluma</button>
     <button onclick="setTool('pencil')" id="tool-pencil" class="moleskine-tool-btn">✏️ Lápiz</button>
-    <button onclick="setTool('watercolor')" id="tool-watercolor" class="moleskine-tool-btn">🖌️ Pincel Acuarela</button>
+    <button onclick="setTool('watercolor')" id="tool-watercolor" class="moleskine-tool-btn">🖌️ Acuarela</button>
     <button onclick="setTool('eraser')" id="tool-eraser" class="moleskine-tool-btn">🧹 Goma</button>
     
     <div style="display:flex; gap:4px; align-items:center;">
@@ -283,11 +344,11 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     </div>
 
     <select id="brushSize" onchange="setSize(this.value)" style="padding:4px; border-radius:4px; background:#263442; color:#fff; border:1px solid #3f5162; font-size:0.8rem;">
-      <option value="1">Muy Fino</option>
-      <option value="3">Fino</option>
-      <option value="6" selected>Medio</option>
-      <option value="12">Grueso</option>
-      <option value="28">Brocha Acuarela</option>
+      <option value="2">Muy Fino</option>
+      <option value="4">Fino</option>
+      <option value="7" selected>Medio</option>
+      <option value="14">Grueso</option>
+      <option value="30">Brocha Acuarela</option>
     </select>
 
     <label style="background:#3b82f6; color:white; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.80rem;">
@@ -296,7 +357,7 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     </label>
 
     <button onclick="undoLastStroke()" class="moleskine-tool-btn" style="background:#4b5563;">↩️ Deshacer</button>
-    <button onclick="clearCanvas()" class="moleskine-tool-btn" style="background:#ef4444;">🗑️ Limpiar</button>
+    <button onclick="clearCurrentPage()" class="moleskine-tool-btn" style="background:#ef4444;">🗑️ Limpiar Pág.</button>
   </div>
 
   <!-- Controles completos de la Foto -->
@@ -306,25 +367,26 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
       <input type="range" id="photoScale" min="0.15" max="1.0" step="0.05" value="0.45" oninput="updatePhotoScale(this.value)">
     </div>
     <div style="display:flex; align-items:center; gap:6px;">
-      <span style="font-size:0.8rem;">Posición X (Horiz.):</span>
+      <span style="font-size:0.8rem;">Posición X:</span>
       <input type="range" id="photoPosX" min="0" max="800" step="10" value="50" oninput="updatePhotoPosX(this.value)">
     </div>
     <div style="display:flex; align-items:center; gap:6px;">
-      <span style="font-size:0.8rem;">Posición Y (Vert.):</span>
-      <input type="range" id="photoPosY" min="10" max="5500" step="10" value="100" oninput="updatePhotoPosY(this.value)">
+      <span style="font-size:0.8rem;">Posición Y:</span>
+      <input type="range" id="photoPosY" min="10" max="1100" step="10" value="100" oninput="updatePhotoPosY(this.value)">
     </div>
     <button onclick="confirmPhotoPlacement()" style="background:#10b981; border:none; color:#fff; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✓ Fijar Foto en el Papel</button>
   </div>
 
-  <!-- Contenedor del Folio con Scroll Bidireccional (1400px x 6000px) -->
-  <div class="folio-wrapper" id="folioWrapper">
-    <div class="canvas-inner-scaler" id="canvasScaler">
-      <canvas id="moleskineCanvas" width="1400" height="6000"></canvas>
+  <!-- VISOR PRINCIPAL CON ZOOM GESTUAL Y PÁGINAS DINÁMICAS -->
+  <div class="notebook-viewport" id="notebookViewport">
+    <div class="notebook-zoom-layer" id="zoomLayer">
+      <!-- Las páginas canvas se inyectan dinámicamente aquí -->
     </div>
+    <div class="zoom-indicator-pill" id="zoomIndicator">Zoom: 100% (2 dedos = Pellizcar / Desplazar)</div>
   </div>
 
   <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-    <button onclick="saveMoleskineNote()" style="flex:1; min-width:180px; background:#4ade80; color:#000; font-weight:bold; padding:9px; border-radius:6px; border:none; cursor:pointer; font-size:0.9rem;">💾 Guardar Nota en Biblioteca</button>
+    <button onclick="saveMoleskineNote()" style="flex:1; min-width:180px; background:#4ade80; color:#000; font-weight:bold; padding:9px; border-radius:6px; border:none; cursor:pointer; font-size:0.9rem;">💾 Guardar Nota Multipágina en Biblioteca</button>
     <button id="btnCalendar" onclick="exportToCalendar()" style="display:none; background:#8b5cf6; color:#fff; font-weight:bold; padding:9px; border-radius:6px; border:none; cursor:pointer; font-size:0.85rem;">📅 Google Calendar</button>
   </div>
   <div id="gpsStatus" style="font-size:11px; color:var(--muted); font-style:italic; margin-top:4px;"></div>
@@ -986,55 +1048,119 @@ document.getElementById("userNotesModal").addEventListener("click",e=>{if(e.targ
 
 renderContent();
 
-/* ---------- LÓGICA MOLESKINE CON DIMENSIONES AMPLIADAS (1400px x 6000px) ---------- */
-let canvas = document.getElementById("moleskineCanvas");
-let ctx = canvas ? canvas.getContext("2d") : null;
-let isDrawing = false;
+/* ---------- LÓGICA MOLESKINE CON PÁGINAS DINÁMICAS Y ZOOM GESTUAL MULTITÁCTIL ---------- */
+const PAGE_WIDTH = 900;
+const PAGE_HEIGHT = 1200;
+
+let pagesData = []; // Array de { id, canvas, ctx, undoStack }
+let activePageIndex = 0;
+
 let currentTool = "pen";
 let currentColor = "#000000";
-let currentSize = 6;
+let currentSize = 7;
+let isDrawing = false;
 let currentCoords = null;
 let currentActiveNoteId = null;
 
-let undoStack = [];
+// Variables para Zoom Gestual (Pinch-to-Zoom y Pan)
+let zoomScale = 1.0;
+let panX = 0;
+let panY = 0;
+let isPinching = false;
+let startTouchDistance = 0;
+let startScale = 1.0;
+let startPanX = 0;
+let startPanY = 0;
+let touchStartCenter = { x: 0, y: 0 };
+
 let pendingImage = null;
 let pendingImgPos = { x: 50, y: 100, width: 350, height: 250 };
-let maxYWritten = 50;
 
-function drawGridBackground() {
-  if(!ctx || !canvas) return;
+function initNotebook() {
+  const zoomLayer = document.getElementById("zoomLayer");
+  if(!zoomLayer) return;
+  zoomLayer.innerHTML = "";
+  pagesData = [];
+  addNewPage();
+  setupViewportGestures();
+}
+
+function addNewPage() {
+  const pageIndex = pagesData.length;
+  const pageId = `moleskine_page_${Date.now()}_${pageIndex}`;
+  
+  const cardDiv = document.createElement("div");
+  cardDiv.className = "moleskine-page-card";
+  cardDiv.style.width = `${PAGE_WIDTH}px`;
+  cardDiv.style.height = `${PAGE_HEIGHT}px`;
+
+  const tagDiv = document.createElement("div");
+  tagDiv.className = "page-header-tag";
+  tagDiv.innerText = `Página ${pageIndex + 1}`;
+  cardDiv.appendChild(tagDiv);
+
+  const canvasEl = document.createElement("canvas");
+  canvasEl.width = PAGE_WIDTH;
+  canvasEl.height = PAGE_HEIGHT;
+  cardDiv.appendChild(canvasEl);
+
+  document.getElementById("zoomLayer").appendChild(cardDiv);
+
+  const ctx = canvasEl.getContext("2d");
+  const pageObj = {
+    id: pageId,
+    canvas: canvasEl,
+    ctx: ctx,
+    undoStack: []
+  };
+
+  pagesData.push(pageObj);
+  drawGridBackground(pageObj);
+
+  // Escuchadores de eventos para dibujo por puntero
+  canvasEl.addEventListener("pointerdown", (e) => startDrawingPage(e, pageIndex));
+  canvasEl.addEventListener("pointermove", (e) => drawPage(e, pageIndex));
+  canvasEl.addEventListener("pointerup", stopDrawingPage);
+  canvasEl.addEventListener("pointerleave", stopDrawingPage);
+
+  updateZoomTransform();
+}
+
+function drawGridBackground(pageObj) {
+  const ctx = pageObj.ctx;
   ctx.save();
   ctx.fillStyle = "#fcfbf7";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, PAGE_WIDTH, PAGE_HEIGHT);
 
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.04)";
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.045)";
   ctx.lineWidth = 1;
-  
-  const gridSize = 30;
-  for(let x = 0; x < canvas.width; x += gridSize) {
+  const gridSize = 32;
+  for(let x = 0; x < PAGE_WIDTH; x += gridSize) {
     ctx.beginPath();
     ctx.moveTo(x, 0);
-    ctx.lineTo(x, canvas.height);
+    ctx.lineTo(x, PAGE_HEIGHT);
     ctx.stroke();
   }
-  for(let y = 0; y < canvas.height; y += gridSize) {
+  for(let y = 0; y < PAGE_HEIGHT; y += gridSize) {
     ctx.beginPath();
     ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
+    ctx.lineTo(PAGE_WIDTH, y);
     ctx.stroke();
   }
   ctx.restore();
 }
 
-function saveCanvasState() {
-  if(!ctx) return;
-  if(undoStack.length >= 20) undoStack.shift();
-  undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+function savePageCanvasState(pageIndex) {
+  const page = pagesData[pageIndex];
+  if(!page || !page.ctx) return;
+  if(page.undoStack.length >= 20) page.undoStack.shift();
+  page.undoStack.push(page.ctx.getImageData(0, 0, PAGE_WIDTH, PAGE_HEIGHT));
 }
 
 function undoLastStroke() {
-  if(!ctx || undoStack.length === 0) return;
-  ctx.putImageData(undoStack.pop(), 0, 0);
+  const page = pagesData[activePageIndex];
+  if(!page || page.undoStack.length === 0) return;
+  page.ctx.putImageData(page.undoStack.pop(), 0, 0);
 }
 
 function setTool(tool) {
@@ -1047,92 +1173,149 @@ function setTool(tool) {
       btn.style.color = tool === t ? '#000' : '#fff';
     }
   });
-
-  if(tool === 'pen') {
-    currentColor = "#000000";
-    if(ctx) ctx.globalAlpha = 1.0;
-  } else if(tool === 'pencil') {
-    currentColor = "#333333";
-    if(ctx) ctx.globalAlpha = 0.85;
-  } else if(tool === 'watercolor') {
-    currentColor = "#f59e0b"; 
-    if(ctx) ctx.globalAlpha = 0.25;  
-  } else if(tool === 'eraser') {
-    if(ctx) ctx.globalAlpha = 1.0;
-  }
 }
 
-function setColor(color) {
-  currentColor = color;
-  if(currentTool === 'watercolor' && ctx) ctx.globalAlpha = 0.25;
+function setColor(color) { currentColor = color; }
+function customColor(color) { currentColor = color; }
+function setSize(size) { currentSize = parseFloat(size); }
+
+function getCanvasCoords(e, canvasEl) {
+  const rect = canvasEl.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left) * (PAGE_WIDTH / rect.width),
+    y: (e.clientY - rect.top) * (PAGE_HEIGHT / rect.height)
+  };
 }
 
-function customColor(color) {
-  currentColor = color;
-  if(currentTool === 'watercolor' && ctx) ctx.globalAlpha = 0.25;
-}
+function startDrawingPage(e, pageIndex) {
+  if(isPinching) return;
+  activePageIndex = pageIndex;
+  const page = pagesData[pageIndex];
+  if(!page || !page.ctx) return;
 
-function setSize(size) {
-  currentSize = parseFloat(size);
-}
-
-if(canvas) {
-  canvas.addEventListener("pointerdown", startDrawing);
-  canvas.addEventListener("pointermove", draw);
-  canvas.addEventListener("pointerup", stopDrawing);
-  canvas.addEventListener("pointerleave", stopDrawing);
-}
-
-function startDrawing(e) {
-  if(!ctx || (e.pointerType !== "pen" && e.pointerType !== "mouse")) return;
-  saveCanvasState();
+  savePageCanvasState(pageIndex);
   isDrawing = true;
-  ctx.beginPath();
-  const rect = canvas.getBoundingClientRect();
-  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-  if(y > maxYWritten) maxYWritten = y;
-  ctx.moveTo(x, y);
+  const pos = getCanvasCoords(e, page.canvas);
+  page.ctx.beginPath();
+  page.ctx.moveTo(pos.x, pos.y);
 }
 
-function draw(e) {
-  if(!isDrawing || !ctx || (e.pointerType !== "pen" && e.pointerType !== "mouse")) return;
-  const rect = canvas.getBoundingClientRect();
-  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-  if(y > maxYWritten) maxYWritten = y;
+function drawPage(e, pageIndex) {
+  if(!isDrawing || isPinching || activePageIndex !== pageIndex) return;
+  const page = pagesData[pageIndex];
+  if(!page || !page.ctx) return;
 
-  ctx.lineWidth = currentSize;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
+  const pos = getCanvasCoords(e, page.canvas);
+  page.ctx.lineWidth = currentSize;
+  page.ctx.lineCap = "round";
+  page.ctx.lineJoin = "round";
 
-  if(currentTool === 'eraser') {
-    ctx.strokeStyle = "#fcfbf7"; 
-  } else {
-    ctx.strokeStyle = currentColor;
+  if(currentTool === 'pen') {
+    page.ctx.globalAlpha = 1.0;
+    page.ctx.strokeStyle = currentColor;
+  } else if(currentTool === 'pencil') {
+    page.ctx.globalAlpha = 0.85;
+    page.ctx.strokeStyle = currentColor;
+  } else if(currentTool === 'watercolor') {
+    page.ctx.globalAlpha = 0.22;
+    page.ctx.strokeStyle = currentColor;
+  } else if(currentTool === 'eraser') {
+    page.ctx.globalAlpha = 1.0;
+    page.ctx.strokeStyle = "#fcfbf7";
   }
 
-  ctx.lineTo(x, y);
-  ctx.stroke();
+  page.ctx.lineTo(pos.x, pos.y);
+  page.ctx.stroke();
 }
 
-function stopDrawing(e) {
+function stopDrawingPage() {
   isDrawing = false;
 }
 
-function clearCanvas() {
-  if(!ctx || !canvas) return;
-  saveCanvasState();
-  drawGridBackground();
-  maxYWritten = 50;
+function clearCurrentPage() {
+  const page = pagesData[activePageIndex];
+  if(!page) return;
+  savePageCanvasState(activePageIndex);
+  drawGridBackground(page);
+}
+
+/* GESTOS TÁCTILES: PINCH TO ZOOM & PAN (DESPLAZAMIENTO) CON 2 DEDOS */
+function setupViewportGestures() {
+  const viewport = document.getElementById("notebookViewport");
+  if(!viewport) return;
+
+  viewport.addEventListener("touchstart", (e) => {
+    if(e.touches.length === 2) {
+      isPinching = true;
+      isDrawing = false;
+      startTouchDistance = getTouchDistance(e.touches);
+      startScale = zoomScale;
+      startPanX = panX;
+      startPanY = panY;
+      touchStartCenter = getTouchCenter(e.touches);
+    }
+  }, { passive: false });
+
+  viewport.addEventListener("touchmove", (e) => {
+    if(e.touches.length === 2 && isPinching) {
+      e.preventDefault();
+      const currentDist = getTouchDistance(e.touches);
+      if(startTouchDistance > 0) {
+        const scaleFactor = currentDist / startTouchDistance;
+        zoomScale = Math.min(Math.max(startScale * scaleFactor, 0.6), 3.0);
+      }
+
+      const currentCenter = getTouchCenter(e.touches);
+      panX = startPanX + (currentCenter.x - touchStartCenter.x);
+      panY = startPanY + (currentCenter.y - touchStartCenter.y);
+
+      updateZoomTransform();
+    }
+  }, { passive: false });
+
+  viewport.addEventListener("touchend", (e) => {
+    if(e.touches.length < 2) {
+      isPinching = false;
+    }
+  });
+}
+
+function getTouchDistance(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function getTouchCenter(touches) {
+  return {
+    x: (touches[0].clientX + touches[1].clientX) / 2,
+    y: (touches[0].clientY + touches[1].clientY) / 2
+  };
+}
+
+function updateZoomTransform() {
+  const zoomLayer = document.getElementById("zoomLayer");
+  const indicator = document.getElementById("zoomIndicator");
+  if(zoomLayer) {
+    zoomLayer.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomScale})`;
+  }
+  if(indicator) {
+    indicator.innerText = `Zoom: ${Math.round(zoomScale * 100)}% (Pellizcar = Zoom / Mover)`;
+  }
+}
+
+function resetZoom() {
+  zoomScale = 1.0;
+  panX = 0;
+  panY = 0;
+  updateZoomTransform();
 }
 
 function startNewNote() {
   currentActiveNoteId = null;
   document.getElementById("moleskineTitleInput").value = "";
   currentCoords = null;
-  undoStack = [];
-  clearCanvas();
+  initNotebook();
   document.getElementById("btnCalendar").style.display = "none";
   document.getElementById("gpsStatus").innerText = "";
 }
@@ -1146,15 +1329,15 @@ function handleFotoGPS(event) {
     const img = new Image();
     img.onload = function() {
       pendingImage = img;
-      const targetWidth = canvas.width * 0.45;
+      const activePage = pagesData[activePageIndex];
+      const targetWidth = PAGE_WIDTH * 0.45;
       const aspect = img.height / img.width;
       const targetHeight = targetWidth * aspect;
-      const targetY = Math.min(maxYWritten + 20, canvas.height - targetHeight - 20);
 
-      pendingImgPos = { x: 50, y: targetY, width: targetWidth, height: targetHeight };
+      pendingImgPos = { x: 50, y: 100, width: targetWidth, height: targetHeight };
       document.getElementById("photoScale").value = 0.45;
       document.getElementById("photoPosX").value = 50;
-      document.getElementById("photoPosY").value = targetY;
+      document.getElementById("photoPosY").value = 100;
       document.getElementById("photoControls").style.display = "flex";
       renderPendingImage();
     };
@@ -1176,16 +1359,17 @@ function handleFotoGPS(event) {
 }
 
 function renderPendingImage() {
-  if(!pendingImage || !ctx) return;
-  saveCanvasState();
-  ctx.drawImage(pendingImage, pendingImgPos.x, pendingImgPos.y, pendingImgPos.width, pendingImgPos.height);
+  const page = pagesData[activePageIndex];
+  if(!pendingImage || !page) return;
+  savePageCanvasState(activePageIndex);
+  page.ctx.drawImage(pendingImage, pendingImgPos.x, pendingImgPos.y, pendingImgPos.width, pendingImgPos.height);
 }
 
 function updatePhotoScale(scaleVal) {
   if(!pendingImage) return;
   undoLastStroke();
   const scale = parseFloat(scaleVal);
-  const targetWidth = canvas.width * scale;
+  const targetWidth = PAGE_WIDTH * scale;
   const aspect = pendingImage.height / pendingImage.width;
   pendingImgPos.width = targetWidth;
   pendingImgPos.height = targetWidth * aspect;
@@ -1208,7 +1392,6 @@ function updatePhotoPosY(yVal) {
 
 function confirmPhotoPlacement() {
   document.getElementById("photoControls").style.display = "none";
-  maxYWritten = pendingImgPos.y + pendingImgPos.height + 20;
   pendingImage = null;
 }
 
@@ -1219,7 +1402,7 @@ function switchTab(tab) {
     if(resCount) resCount.style.display = "none";
     
     document.getElementById("moleskineSection").style.display = "block";
-    if(undoStack.length === 0) clearCanvas();
+    if(pagesData.length === 0) initNotebook();
     renderMoleskineLibrary();
   }
 }
@@ -1232,8 +1415,20 @@ function exitMoleskine() {
 }
 
 function saveMoleskineNote() {
+  if(pagesData.length === 0) return;
   const title = document.getElementById("moleskineTitleInput").value.trim() || `Nota Moleskine ${new Date().toLocaleDateString()}`;
-  const dataUrl = canvas.toDataURL("image/png");
+
+  // Consolidar todas las páginas canvas en una única tira de imagen
+  const combinedCanvas = document.createElement("canvas");
+  combinedCanvas.width = PAGE_WIDTH;
+  combinedCanvas.height = PAGE_HEIGHT * pagesData.length;
+  const combCtx = combinedCanvas.getContext("2d");
+
+  pagesData.forEach((p, idx) => {
+    combCtx.drawImage(p.canvas, 0, idx * PAGE_HEIGHT);
+  });
+
+  const dataUrl = combinedCanvas.toDataURL("image/png");
 
   if(!currentActiveNoteId) {
     currentActiveNoteId = "moleskine_" + Date.now();
@@ -1243,6 +1438,7 @@ function saveMoleskineNote() {
   const noteEntry = {
     id: currentActiveNoteId,
     title,
+    pageCount: pagesData.length,
     date: new Date().toLocaleString(),
     image: dataUrl,
     coords: currentCoords
@@ -1257,7 +1453,7 @@ function saveMoleskineNote() {
   localStorage.setItem("moleskine_saved_notes", JSON.stringify(window.moleskineLibrary));
   if(window.saveToFirebase) window.saveToFirebase('moleskine_saved_notes', window.moleskineLibrary);
 
-  alert(`¡Nota "${title}" guardada correctamente!`);
+  alert(`¡Nota "${title}" (${pagesData.length} págs) guardada con éxito!`);
   renderMoleskineLibrary();
 }
 
@@ -1274,7 +1470,7 @@ function renderMoleskineLibrary() {
       <div class="saved-note-card">
         <div>
           <strong style="color:#fff; font-size:0.9rem;">${escapeHtml(note.title)}</strong>
-          <div style="font-size:0.75rem; color:var(--muted);">${escapeHtml(note.date)}</div>
+          <div style="font-size:0.75rem; color:var(--muted);">${escapeHtml(note.date)} · ${note.pageCount || 1} página(s)</div>
         </div>
         <div style="display:flex; gap:6px;">
           <button onclick="loadSavedNote('${note.id}')" style="background:#2563eb; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.75rem;">📂 Cargar</button>
@@ -1287,13 +1483,19 @@ function renderMoleskineLibrary() {
 
 function loadSavedNote(id) {
   const note = window.moleskineLibrary.find(n => n.id === id);
-  if(!note || !ctx) return;
+  if(!note) return;
   const img = new Image();
   img.onload = function() {
-    saveCanvasState();
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawGridBackground();
-    ctx.drawImage(img, 0, 0);
+    const totalPages = note.pageCount || 1;
+    document.getElementById("zoomLayer").innerHTML = "";
+    pagesData = [];
+
+    for(let i = 0; i < totalPages; i++) {
+      addNewPage();
+      const pageCtx = pagesData[i].ctx;
+      pageCtx.drawImage(img, 0, i * PAGE_HEIGHT, PAGE_WIDTH, PAGE_HEIGHT, 0, 0, PAGE_WIDTH, PAGE_HEIGHT);
+    }
+
     currentActiveNoteId = note.id;
     document.getElementById("moleskineTitleInput").value = note.title;
     if(note.coords) currentCoords = note.coords;
@@ -1315,10 +1517,6 @@ function exportToCalendar() {
   const title = encodeURIComponent("📓 " + titleText);
   const details = encodeURIComponent(`Nota Moleskine\n\n${gpsText}`);
   window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}`, '_blank');
-}
-
-if(ctx) {
-  drawGridBackground();
 }
 </script>
 </body>
