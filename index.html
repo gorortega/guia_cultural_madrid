@@ -149,6 +149,7 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
 
 .pages-viewport{width:100%;overflow-x:auto;scrollbar-width:none;}
 .pages-viewport::-webkit-scrollbar{display:none;}
+#photoControls input[type=range]{width:105px;}
 .pages-stack{display:flex;flex-direction:column;gap:20px;width:calc(100% * var(--z,1));align-items:center;}
 .page-block{background:#fcfbf7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4);border:2px solid #3f5162;position:relative;width:100%;max-width:calc(900px * var(--z,1));overflow:hidden;transition:border-color 0.2s;}
 .page-block.active-page{border-color:#3b82f6;}
@@ -307,7 +308,7 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
   </div>
 
   <!-- Capa Ajuste de Foto sobre Página Activa -->
-  <div id="photoControls" style="display:none; background:#18212b; padding:10px; border-radius:6px; margin-bottom:10px; align-items:center; gap:12px; border:1px solid #3f5162; flex-wrap:wrap;">
+  <div id="photoControls" style="display:none; position:fixed; left:8px; right:8px; bottom:calc(8px + env(safe-area-inset-bottom, 0px)); z-index:300; background:rgba(24,33,43,0.97); padding:8px 10px; border-radius:10px; align-items:center; gap:8px 12px; border:1px solid #3f5162; flex-wrap:wrap; box-shadow:0 -4px 16px rgba(0,0,0,0.5);">
     <span style="color:var(--accent); font-weight:bold; font-size:0.85rem;" id="photoTargetLabel">Ajustando foto en Página 1:</span>
     <div style="display:flex; align-items:center; gap:6px;">
       <span style="font-size:0.8rem;">Tamaño:</span>
@@ -319,7 +320,7 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     </div>
     <div style="display:flex; align-items:center; gap:6px;">
       <span style="font-size:0.8rem;">Posición Y:</span>
-      <input type="range" id="photoPosY" min="0" max="900" step="10" value="50" oninput="updatePhotoPreview()">
+      <input type="range" id="photoPosY" min="0" max="1500" step="10" value="50" oninput="updatePhotoPreview()">
     </div>
     <button onclick="confirmPhotoPlacement()" style="background:#10b981; border:none; color:#fff; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✓ Fijar Foto en Papel</button>
     <button onclick="cancelPhotoPlacement()" style="background:#ef4444; border:none; color:#fff; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✕ Cancelar</button>
@@ -1020,6 +1021,7 @@ let currentSize = 6;
 let currentCoords = null;
 let currentActiveNoteId = null;
 
+const UNDO_LIMIT = 8;
 let undoStacks = {}; 
 let basePageImages = {}; 
 
@@ -1075,7 +1077,7 @@ function addNewPageBlock() {
       </div>
     </div>
     <div class="canvas-holder">
-      <canvas id="${pageId}" class="moleskine-page-canvas" width="900" height="1200"></canvas>
+      <canvas id="${pageId}" class="moleskine-page-canvas" width="900" height="1800"></canvas>
     </div>
   `;
   stack.appendChild(block);
@@ -1124,7 +1126,7 @@ function initCanvasEvents(canvas, pageId) {
 
   function saveState() {
     if(!undoStacks[pageId]) undoStacks[pageId] = [];
-    if(undoStacks[pageId].length >= 20) undoStacks[pageId].shift();
+    if(undoStacks[pageId].length >= UNDO_LIMIT) undoStacks[pageId].shift();
     undoStacks[pageId].push(ctx.getImageData(0, 0, canvas.width, canvas.height));
   }
 
@@ -1429,6 +1431,11 @@ function startPhotoPlacementOnActivePage() {
   const pIdx = pagesData.findIndex(p => p.id === activePageId) + 1;
   document.getElementById("photoTargetLabel").innerText = `Ajustando foto en Página ${pIdx}:`;
   document.getElementById("photoControls").style.display = "flex";
+  const tb = document.querySelector(".moleskine-toolbar");
+  if(tb) tb.style.display = "none";
+  const pageCanvas = document.getElementById(activePageId);
+  const pageBlock = pageCanvas ? pageCanvas.closest(".page-block") : null;
+  if(pageBlock) pageBlock.scrollIntoView({ block: "start", inline: "nearest" });
   updatePhotoPreview();
 }
 
@@ -1455,8 +1462,19 @@ function updatePhotoPreview() {
   ctx.drawImage(croppedImage, posX, posY, targetWidth, targetHeight);
 }
 
+function showToolbarAgain() {
+  const tb = document.querySelector(".moleskine-toolbar");
+  if(tb) tb.style.display = "";
+}
+
 function confirmPhotoPlacement() {
   document.getElementById("photoControls").style.display = "none";
+  showToolbarAgain();
+  if(activePageId && basePageImages[activePageId]) {
+    if(!undoStacks[activePageId]) undoStacks[activePageId] = [];
+    if(undoStacks[activePageId].length >= UNDO_LIMIT) undoStacks[activePageId].shift();
+    undoStacks[activePageId].push(basePageImages[activePageId]);
+  }
   if(activePageId) delete basePageImages[activePageId];
   croppedImage = null;
   loadedRawImage = null;
@@ -1464,6 +1482,7 @@ function confirmPhotoPlacement() {
 
 function cancelPhotoPlacement() {
   document.getElementById("photoControls").style.display = "none";
+  showToolbarAgain();
   if(activePageId) {
     const canvas = document.getElementById(activePageId);
     if(canvas && basePageImages[activePageId]) {
