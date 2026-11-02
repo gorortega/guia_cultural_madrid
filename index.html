@@ -141,35 +141,86 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
 .form-group textarea{height:160px;resize:vertical;line-height:1.4}
 .modal-buttons{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 
-/* MOLESKINE MULTIPÁGINA CON MULTITÁCTIL NATIVO Y CONFIRMACIÓN DE BORRADO */
-.moleskine-container{max-width:100%;margin:0 auto;background:#202c38;border-radius:12px;padding:12px;border:1px solid #3f5162;width:100%;box-sizing:border-box;}
-.moleskine-toolbar{background:#18212b;padding:10px;border-radius:8px;border:1px solid #3f5162;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:sticky;top:0;z-index:100;}
+/* NUEVOS ESTILOS MOLESKINE CON PÁGINAS DINÁMICAS Y ZOOM GESTUAL */
+.moleskine-container{max-width:100%;margin:0 auto;background:#202c38;border-radius:12px;padding:15px;border:1px solid #3f5162;width:100%;box-sizing:border-box;}
+.moleskine-toolbar{background:#18212b;padding:10px;border-radius:8px;border:1px solid #3f5162;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:sticky;top:0;z-index:20;}
 .moleskine-tool-btn{padding:6px 12px;border-radius:6px;border:1px solid #3f5162;background:#263442;color:#fff;cursor:pointer;font-weight:bold;font-size:0.85rem}
 .moleskine-tool-btn.active{background:var(--accent);color:#000;border-color:#fff}
 
-.pages-stack{display:flex;flex-direction:column;gap:20px;width:100%;align-items:center;}
-.page-block{background:#fcfbf7;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.4);border:2px solid #3f5162;position:relative;width:100%;max-width:900px;overflow:hidden;transition:border-color 0.2s;}
-.page-block.active-page{border-color:#3b82f6;}
-.page-header{background:#d1d5db;color:#111827;padding:6px 10px;font-size:0.8rem;font-weight:bold;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
-.canvas-holder{position:relative;width:100%;background:#fcfbf7;}
-.moleskine-page-canvas{display:block;background:#fcfbf7;width:100%;height:auto;touch-action:none;}
+.notebook-viewport{
+  background:#141c24;
+  border-radius:8px;
+  border:1px solid #3f5162;
+  overflow:hidden;
+  position:relative;
+  width:100%;
+  height:75vh;
+  touch-action:none;
+}
+.notebook-zoom-layer{
+  transform-origin:0 0;
+  transition:transform 0.05s ease-out;
+  padding:20px 10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:25px;
+}
+.moleskine-page-card{
+  background:#fcfbf7;
+  box-shadow:0 6px 18px rgba(0,0,0,0.4);
+  border-radius:4px;
+  border:1px solid #dcd6c8;
+  position:relative;
+}
+.moleskine-page-card canvas{
+  display:block;
+  background:transparent;
+  cursor:crosshair;
+  touch-action:none;
+}
+.page-header-tag{
+  position:absolute;
+  top:-22px;
+  left:0;
+  font-size:11px;
+  color:#9fc5e8;
+  font-weight:bold;
+  background:#18212b;
+  padding:2px 8px;
+  border-radius:4px 4px 0 0;
+  border:1px solid #3f5162;
+  border-bottom:none;
+}
 
-.add-page-btn-container{text-align:center;margin:15px 0;}
-.btn-add-page{background:#3b82f6;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:bold;font-size:0.95rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+.zoom-indicator-pill{
+  position:absolute;
+  bottom:15px;
+  right:15px;
+  background:rgba(24,33,43,0.85);
+  color:#fff;
+  padding:5px 10px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:bold;
+  border:1px solid #3f5162;
+  pointer-events:none;
+  z-index:15;
+}
 
-.saved-notes-list{margin-top:20px;background:#18212b;padding:12px;border-radius:8px;border:1px solid #3f5162}
+.saved-notes-list{margin-top:15px;background:#18212b;padding:12px;border-radius:8px;border:1px solid #3f5162}
 .saved-note-card{background:#263442;padding:10px 12px;border-radius:6px;border:1px solid #3f5162;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
-
-/* MODAL EDITOR RECORTE DE FOTO */
-.crop-modal-content{background:#18212b;border:1px solid #597083;border-radius:12px;padding:16px;max-width:95vw;width:550px;color:#fff;display:flex;flex-direction:column;gap:12px;}
-.crop-canvas-holder{max-height:50vh;overflow:auto;background:#000;display:flex;justify-content:center;align-items:center;border:1px dashed #597083;border-radius:8px;padding:10px;}
-#cropCanvas{max-width:100%;height:auto;cursor:crosshair;touch-action:none;}
 
 @media(max-width:760px){
   .grid{grid-template-columns:1fr}
-  .moleskine-container{padding:6px;margin:0;}
+  .moleskine-container{padding:8px;margin:0;}
   .calendar,.week-view{font-size:.7rem}
   .day-cell{min-height:82px;padding:4px}
+}
+@media(max-width:600px){
+  header h1{font-size:1.45rem}
+  .card-footer{flex-direction:column}
+  .btn-action{width:100%}
 }
 </style>
 
@@ -260,13 +311,15 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
   <div id="contentArea"></div>
 </div>
 
-<!-- SECCIÓN NOTAS MOLESKINE MULTIPÁGINA -->
+<!-- SECCIÓN NOTAS MOLESKINE DINÁMICAS CON GESTOS -->
 <div id="moleskineSection" style="display:none;" class="moleskine-container">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
-    <h2 style="color:var(--accent); font-family:serif; margin:0; font-size:1.3rem;">📓 Cuaderno Moleskine</h2>
-    <div style="display:flex; gap:6px;">
-      <button onclick="startNewNote()" style="background:#2563eb; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">➕ Nueva Nota</button>
-      <button onclick="exitMoleskine()" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">← Volver a Menú</button>
+    <h2 style="color:var(--accent); font-family:serif; margin:0; font-size:1.3rem;">📓 Cuaderno Moleskine Multipágina</h2>
+    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+      <button onclick="addNewPage()" style="background:#10b981; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">➕ Añadir Página</button>
+      <button onclick="resetZoom()" style="background:#4b5563; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">🔍 100% Zoom</button>
+      <button onclick="startNewNote()" style="background:#2563eb; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">🆕 Nueva Nota</button>
+      <button onclick="exitMoleskine()" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">← Volver</button>
     </div>
   </div>
 
@@ -274,7 +327,7 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     <input type="text" id="moleskineTitleInput" placeholder="Título de la nota (ej. Apuntes Sorolla)..." style="width:100%; padding:7px 10px; border-radius:6px; border:1px solid #3f5162; background:#18212b; color:#fff; font-size:0.9rem;">
   </div>
 
-  <!-- Barra de Herramientas Principal -->
+  <!-- Barra de Herramientas -->
   <div class="moleskine-toolbar">
     <button onclick="setTool('pen')" id="tool-pen" class="moleskine-tool-btn active">✒️ Pluma</button>
     <button onclick="setTool('pencil')" id="tool-pencil" class="moleskine-tool-btn">✏️ Lápiz</button>
@@ -291,48 +344,49 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
     </div>
 
     <select id="brushSize" onchange="setSize(this.value)" style="padding:4px; border-radius:4px; background:#263442; color:#fff; border:1px solid #3f5162; font-size:0.8rem;">
-      <option value="1">Muy Fino</option>
-      <option value="3">Fino</option>
-      <option value="6" selected>Medio</option>
-      <option value="12">Grueso</option>
-      <option value="28">Brocha Acuarela</option>
+      <option value="2">Muy Fino</option>
+      <option value="4">Fino</option>
+      <option value="7" selected>Medio</option>
+      <option value="14">Grueso</option>
+      <option value="30">Brocha Acuarela</option>
     </select>
 
     <label style="background:#3b82f6; color:white; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.80rem;">
-      📷 Foto + GPS (Pág. Activa)
+      📷 Foto + GPS
       <input type="file" accept="image/*" capture="environment" onchange="handleFotoGPS(event)" style="display:none;">
     </label>
+
+    <button onclick="undoLastStroke()" class="moleskine-tool-btn" style="background:#4b5563;">↩️ Deshacer</button>
+    <button onclick="clearCurrentPage()" class="moleskine-tool-btn" style="background:#ef4444;">🗑️ Limpiar Pág.</button>
   </div>
 
-  <!-- Capa Ajuste de Foto sobre Página Activa -->
+  <!-- Controles completos de la Foto -->
   <div id="photoControls" style="display:none; background:#18212b; padding:10px; border-radius:6px; margin-bottom:10px; align-items:center; gap:12px; border:1px solid #3f5162; flex-wrap:wrap;">
-    <span style="color:var(--accent); font-weight:bold; font-size:0.85rem;" id="photoTargetLabel">Ajustando foto en Página 1:</span>
     <div style="display:flex; align-items:center; gap:6px;">
       <span style="font-size:0.8rem;">Tamaño:</span>
-      <input type="range" id="photoScale" min="0.1" max="1.0" step="0.05" value="0.45" oninput="updatePhotoPreview()">
+      <input type="range" id="photoScale" min="0.15" max="1.0" step="0.05" value="0.45" oninput="updatePhotoScale(this.value)">
     </div>
     <div style="display:flex; align-items:center; gap:6px;">
       <span style="font-size:0.8rem;">Posición X:</span>
-      <input type="range" id="photoPosX" min="0" max="600" step="10" value="50" oninput="updatePhotoPreview()">
+      <input type="range" id="photoPosX" min="0" max="800" step="10" value="50" oninput="updatePhotoPosX(this.value)">
     </div>
     <div style="display:flex; align-items:center; gap:6px;">
       <span style="font-size:0.8rem;">Posición Y:</span>
-      <input type="range" id="photoPosY" min="0" max="900" step="10" value="50" oninput="updatePhotoPreview()">
+      <input type="range" id="photoPosY" min="10" max="1100" step="10" value="100" oninput="updatePhotoPosY(this.value)">
     </div>
-    <button onclick="confirmPhotoPlacement()" style="background:#10b981; border:none; color:#fff; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✓ Fijar Foto en Papel</button>
-    <button onclick="cancelPhotoPlacement()" style="background:#ef4444; border:none; color:#fff; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✕ Cancelar</button>
+    <button onclick="confirmPhotoPlacement()" style="background:#10b981; border:none; color:#fff; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✓ Fijar Foto en el Papel</button>
   </div>
 
-  <!-- Apilador de Hojas/Páginas -->
-  <div class="pages-stack" id="pagesStack"></div>
-
-  <!-- Botón Añadir Página -->
-  <div class="add-page-btn-container">
-    <button class="btn-add-page" onclick="addNewPageBlock()">➕ Añadir Nueva Página</button>
+  <!-- VISOR PRINCIPAL CON ZOOM GESTUAL Y PÁGINAS DINÁMICAS -->
+  <div class="notebook-viewport" id="notebookViewport">
+    <div class="notebook-zoom-layer" id="zoomLayer">
+      <!-- Las páginas canvas se inyectan dinámicamente aquí -->
+    </div>
+    <div class="zoom-indicator-pill" id="zoomIndicator">Zoom: 100% (2 dedos = Pellizcar / Desplazar)</div>
   </div>
 
   <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-    <button onclick="saveMoleskineNote()" style="flex:1; min-width:180px; background:#4ade80; color:#000; font-weight:bold; padding:9px; border-radius:6px; border:none; cursor:pointer; font-size:0.9rem;">💾 Guardar Nota Multipágina</button>
+    <button onclick="saveMoleskineNote()" style="flex:1; min-width:180px; background:#4ade80; color:#000; font-weight:bold; padding:9px; border-radius:6px; border:none; cursor:pointer; font-size:0.9rem;">💾 Guardar Nota Multipágina en Biblioteca</button>
     <button id="btnCalendar" onclick="exportToCalendar()" style="display:none; background:#8b5cf6; color:#fff; font-weight:bold; padding:9px; border-radius:6px; border:none; cursor:pointer; font-size:0.85rem;">📅 Google Calendar</button>
   </div>
   <div id="gpsStatus" style="font-size:11px; color:var(--muted); font-style:italic; margin-top:4px;"></div>
@@ -341,21 +395,6 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
   <div class="saved-notes-list">
     <h3 style="color:var(--accent); margin-bottom:8px; font-size:1rem;">📚 Biblioteca de Notas Moleskine</h3>
     <div id="savedNotesContainer"></div>
-  </div>
-</div>
-
-<!-- MODAL CROP/RECORTE RÁPIDO DE FOTO -->
-<div class="modal-overlay" id="cropModal">
-  <div class="crop-modal-content">
-    <h3 style="margin:0; font-size:1.1rem; color:var(--accent);">✂️ Recortar imagen sobrante</h3>
-    <p style="font-size:0.8rem; color:var(--muted); margin:0;">Arrastra sobre la imagen para seleccionar solo el objeto de interés:</p>
-    <div class="crop-canvas-holder">
-      <canvas id="cropCanvas"></canvas>
-    </div>
-    <div style="display:flex; justify-content:space-between; gap:8px; margin-top:5px;">
-      <button onclick="skipCropUseFull()" style="background:#4b5563; color:white; border:none; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">Usar Foto Entera</button>
-      <button onclick="applyCrop()" style="background:#10b981; color:white; border:none; padding:8px 14px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">✓ Aplicar Recorte</button>
-    </div>
   </div>
 </div>
 
@@ -1009,201 +1048,119 @@ document.getElementById("userNotesModal").addEventListener("click",e=>{if(e.targ
 
 renderContent();
 
-/* ---------- LÓGICA MOLESKINE MULTIPÁGINA REFINADA ---------- */
-let pagesData = [];
-let activePageId = null;
+/* ---------- LÓGICA MOLESKINE CON PÁGINAS DINÁMICAS Y ZOOM GESTUAL MULTITÁCTIL ---------- */
+const PAGE_WIDTH = 900;
+const PAGE_HEIGHT = 1200;
+
+let pagesData = []; // Array de { id, canvas, ctx, undoStack }
+let activePageIndex = 0;
+
 let currentTool = "pen";
 let currentColor = "#000000";
-let currentSize = 6;
+let currentSize = 7;
+let isDrawing = false;
 let currentCoords = null;
 let currentActiveNoteId = null;
 
-let undoStacks = {}; 
-let basePageImages = {}; 
+// Variables para Zoom Gestual (Pinch-to-Zoom y Pan)
+let zoomScale = 1.0;
+let panX = 0;
+let panY = 0;
+let isPinching = false;
+let startTouchDistance = 0;
+let startScale = 1.0;
+let startPanX = 0;
+let startPanY = 0;
+let touchStartCenter = { x: 0, y: 0 };
 
-// Foto y recorte
-let loadedRawImage = null;
-let croppedImage = null;
-let cropSelection = { x: 0, y: 0, w: 0, h: 0 };
-let isCropping = false;
+let pendingImage = null;
+let pendingImgPos = { x: 50, y: 100, width: 350, height: 250 };
 
-function drawGridBackground(ctx, canvas) {
+function initNotebook() {
+  const zoomLayer = document.getElementById("zoomLayer");
+  if(!zoomLayer) return;
+  zoomLayer.innerHTML = "";
+  pagesData = [];
+  addNewPage();
+  setupViewportGestures();
+}
+
+function addNewPage() {
+  const pageIndex = pagesData.length;
+  const pageId = `moleskine_page_${Date.now()}_${pageIndex}`;
+  
+  const cardDiv = document.createElement("div");
+  cardDiv.className = "moleskine-page-card";
+  cardDiv.style.width = `${PAGE_WIDTH}px`;
+  cardDiv.style.height = `${PAGE_HEIGHT}px`;
+
+  const tagDiv = document.createElement("div");
+  tagDiv.className = "page-header-tag";
+  tagDiv.innerText = `Página ${pageIndex + 1}`;
+  cardDiv.appendChild(tagDiv);
+
+  const canvasEl = document.createElement("canvas");
+  canvasEl.width = PAGE_WIDTH;
+  canvasEl.height = PAGE_HEIGHT;
+  cardDiv.appendChild(canvasEl);
+
+  document.getElementById("zoomLayer").appendChild(cardDiv);
+
+  const ctx = canvasEl.getContext("2d");
+  const pageObj = {
+    id: pageId,
+    canvas: canvasEl,
+    ctx: ctx,
+    undoStack: []
+  };
+
+  pagesData.push(pageObj);
+  drawGridBackground(pageObj);
+
+  // Escuchadores de eventos para dibujo por puntero
+  canvasEl.addEventListener("pointerdown", (e) => startDrawingPage(e, pageIndex));
+  canvasEl.addEventListener("pointermove", (e) => drawPage(e, pageIndex));
+  canvasEl.addEventListener("pointerup", stopDrawingPage);
+  canvasEl.addEventListener("pointerleave", stopDrawingPage);
+
+  updateZoomTransform();
+}
+
+function drawGridBackground(pageObj) {
+  const ctx = pageObj.ctx;
   ctx.save();
   ctx.fillStyle = "#fcfbf7";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, PAGE_WIDTH, PAGE_HEIGHT);
 
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.04)";
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.045)";
   ctx.lineWidth = 1;
-  const gridSize = 30;
-  for(let x = 0; x < canvas.width; x += gridSize) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  const gridSize = 32;
+  for(let x = 0; x < PAGE_WIDTH; x += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, PAGE_HEIGHT);
+    ctx.stroke();
   }
-  for(let y = 0; y < canvas.height; y += gridSize) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  for(let y = 0; y < PAGE_HEIGHT; y += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(PAGE_WIDTH, y);
+    ctx.stroke();
   }
   ctx.restore();
 }
 
-function setActivePage(pageId) {
-  activePageId = pageId;
-  document.querySelectorAll(".page-block").forEach(b => b.classList.remove("active-page"));
-  const currentBlock = document.getElementById("block_" + pageId);
-  if(currentBlock) currentBlock.classList.add("active-page");
+function savePageCanvasState(pageIndex) {
+  const page = pagesData[pageIndex];
+  if(!page || !page.ctx) return;
+  if(page.undoStack.length >= 20) page.undoStack.shift();
+  page.undoStack.push(page.ctx.getImageData(0, 0, PAGE_WIDTH, PAGE_HEIGHT));
 }
 
-function addNewPageBlock() {
-  const pageIndex = pagesData.length + 1;
-  const pageId = "page_canvas_" + Date.now() + "_" + pageIndex;
-  pagesData.push({ id: pageId, index: pageIndex });
-  undoStacks[pageId] = [];
-
-  const stack = document.getElementById("pagesStack");
-  const block = document.createElement("div");
-  block.className = "page-block";
-  block.id = "block_" + pageId;
-  block.onclick = () => setActivePage(pageId);
-
-  block.innerHTML = `
-    <div class="page-header">
-      <span>Página ${pageIndex}</span>
-      <div style="display:flex; gap:6px;">
-        <button onclick="event.stopPropagation(); undoLastStrokePage('${pageId}')" style="background:#4b5563; color:white; border:none; padding:3px 8px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.75rem;">↩️ Deshacer</button>
-        <button onclick="event.stopPropagation(); clearPageCanvas('${pageId}')" style="background:#eab308; color:black; border:none; padding:3px 8px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.75rem;">🧹 Limpiar</button>
-        <button onclick="event.stopPropagation(); deletePageBlock('${pageId}', ${pageIndex})" style="background:#ef4444; color:white; border:none; padding:3px 8px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.75rem;">🗑️ Eliminar</button>
-      </div>
-    </div>
-    <div class="canvas-holder">
-      <canvas id="${pageId}" class="moleskine-page-canvas" width="900" height="1200"></canvas>
-    </div>
-  `;
-  stack.appendChild(block);
-
-  const canvas = document.getElementById(pageId);
-  const ctx = canvas.getContext("2d");
-  drawGridBackground(ctx, canvas);
-
-  initCanvasEvents(canvas, pageId);
-  setActivePage(pageId);
-}
-
-function deletePageBlock(pageId, pageIndex) {
-  if(pagesData.length <= 1) {
-    alert("Debe haber al menos 1 página en el cuaderno.");
-    return;
-  }
-
-  const confirmDelete = confirm(`¿Estás seguro de que deseas eliminar la Página ${pageIndex}? Se perderán todas sus anotaciones.`);
-  if(!confirmDelete) return;
-
-  pagesData = pagesData.filter(p => p.id !== pageId);
-  delete undoStacks[pageId];
-  delete basePageImages[pageId];
-  const block = document.getElementById("block_" + pageId);
-  if(block) block.remove();
-
-  if(activePageId === pageId && pagesData.length > 0) {
-    setActivePage(pagesData[0].id);
-  }
-}
-
-function initCanvasEvents(canvas, pageId) {
-  let isDrawing = false;
-  let activePointers = 0;
-  const ctx = canvas.getContext("2d");
-
-  function saveState() {
-    if(!undoStacks[pageId]) undoStacks[pageId] = [];
-    if(undoStacks[pageId].length >= 20) undoStacks[pageId].shift();
-    undoStacks[pageId].push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-  }
-
-  canvas.addEventListener("touchstart", (e) => {
-    setActivePage(pageId);
-    activePointers = e.touches.length;
-    if(activePointers > 1) {
-      isDrawing = false;
-      return; // Permite el zoom/scroll nativo del navegador con 2 dedos
-    }
-    saveState();
-    isDrawing = true;
-    ctx.beginPath();
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches[0];
-    const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
-    ctx.moveTo(x, y);
-  }, { passive: true });
-
-  canvas.addEventListener("touchmove", (e) => {
-    activePointers = e.touches.length;
-    if(activePointers > 1 || !isDrawing) {
-      isDrawing = false;
-      return; // Detiene trazos accidentales si entran 2 dedos
-    }
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches[0];
-    const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
-
-    ctx.lineWidth = currentSize;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = (currentTool === 'eraser') ? "#fcfbf7" : currentColor;
-
-    ctx.lineTo(x, y);
-    ctx.stroke();
-  }, { passive: true });
-
-  const stopDrawingTouch = () => { isDrawing = false; activePointers = 0; };
-  canvas.addEventListener("touchend", stopDrawingTouch);
-  canvas.addEventListener("touchcancel", stopDrawingTouch);
-
-  // Eventos de ratón / S Pen (Pointer Events)
-  canvas.addEventListener("pointerdown", (e) => {
-    if(e.pointerType === "touch") return; // Manejado arriba por touch events
-    setActivePage(pageId);
-    saveState();
-    isDrawing = true;
-    ctx.beginPath();
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-    ctx.moveTo(x, y);
-  });
-
-  canvas.addEventListener("pointermove", (e) => {
-    if(e.pointerType === "touch" || !isDrawing) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-
-    ctx.lineWidth = currentSize;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = (currentTool === 'eraser') ? "#fcfbf7" : currentColor;
-
-    ctx.lineTo(x, y);
-    ctx.stroke();
-  });
-
-  const stopDrawingPointer = () => { isDrawing = false; };
-  canvas.addEventListener("pointerup", stopDrawingPointer);
-  canvas.addEventListener("pointerleave", stopDrawingPointer);
-}
-
-function clearPageCanvas(pageId) {
-  const canvas = document.getElementById(pageId);
-  if(!canvas) return;
-  const ctx = canvas.getContext("2d");
-  drawGridBackground(ctx, canvas);
-}
-
-function undoLastStrokePage(targetId) {
-  if(!targetId) return;
-  const canvas = document.getElementById(targetId);
-  if(!canvas || !undoStacks[targetId] || undoStacks[targetId].length === 0) return;
-  const ctx = canvas.getContext("2d");
-  ctx.putImageData(undoStacks[targetId].pop(), 0, 0);
+function undoLastStroke() {
+  const page = pagesData[activePageIndex];
+  if(!page || page.undoStack.length === 0) return;
+  page.ctx.putImageData(page.undoStack.pop(), 0, 0);
 }
 
 function setTool(tool) {
@@ -1222,20 +1179,147 @@ function setColor(color) { currentColor = color; }
 function customColor(color) { currentColor = color; }
 function setSize(size) { currentSize = parseFloat(size); }
 
+function getCanvasCoords(e, canvasEl) {
+  const rect = canvasEl.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left) * (PAGE_WIDTH / rect.width),
+    y: (e.clientY - rect.top) * (PAGE_HEIGHT / rect.height)
+  };
+}
+
+function startDrawingPage(e, pageIndex) {
+  if(isPinching) return;
+  activePageIndex = pageIndex;
+  const page = pagesData[pageIndex];
+  if(!page || !page.ctx) return;
+
+  savePageCanvasState(pageIndex);
+  isDrawing = true;
+  const pos = getCanvasCoords(e, page.canvas);
+  page.ctx.beginPath();
+  page.ctx.moveTo(pos.x, pos.y);
+}
+
+function drawPage(e, pageIndex) {
+  if(!isDrawing || isPinching || activePageIndex !== pageIndex) return;
+  const page = pagesData[pageIndex];
+  if(!page || !page.ctx) return;
+
+  const pos = getCanvasCoords(e, page.canvas);
+  page.ctx.lineWidth = currentSize;
+  page.ctx.lineCap = "round";
+  page.ctx.lineJoin = "round";
+
+  if(currentTool === 'pen') {
+    page.ctx.globalAlpha = 1.0;
+    page.ctx.strokeStyle = currentColor;
+  } else if(currentTool === 'pencil') {
+    page.ctx.globalAlpha = 0.85;
+    page.ctx.strokeStyle = currentColor;
+  } else if(currentTool === 'watercolor') {
+    page.ctx.globalAlpha = 0.22;
+    page.ctx.strokeStyle = currentColor;
+  } else if(currentTool === 'eraser') {
+    page.ctx.globalAlpha = 1.0;
+    page.ctx.strokeStyle = "#fcfbf7";
+  }
+
+  page.ctx.lineTo(pos.x, pos.y);
+  page.ctx.stroke();
+}
+
+function stopDrawingPage() {
+  isDrawing = false;
+}
+
+function clearCurrentPage() {
+  const page = pagesData[activePageIndex];
+  if(!page) return;
+  savePageCanvasState(activePageIndex);
+  drawGridBackground(page);
+}
+
+/* GESTOS TÁCTILES: PINCH TO ZOOM & PAN (DESPLAZAMIENTO) CON 2 DEDOS */
+function setupViewportGestures() {
+  const viewport = document.getElementById("notebookViewport");
+  if(!viewport) return;
+
+  viewport.addEventListener("touchstart", (e) => {
+    if(e.touches.length === 2) {
+      isPinching = true;
+      isDrawing = false;
+      startTouchDistance = getTouchDistance(e.touches);
+      startScale = zoomScale;
+      startPanX = panX;
+      startPanY = panY;
+      touchStartCenter = getTouchCenter(e.touches);
+    }
+  }, { passive: false });
+
+  viewport.addEventListener("touchmove", (e) => {
+    if(e.touches.length === 2 && isPinching) {
+      e.preventDefault();
+      const currentDist = getTouchDistance(e.touches);
+      if(startTouchDistance > 0) {
+        const scaleFactor = currentDist / startTouchDistance;
+        zoomScale = Math.min(Math.max(startScale * scaleFactor, 0.6), 3.0);
+      }
+
+      const currentCenter = getTouchCenter(e.touches);
+      panX = startPanX + (currentCenter.x - touchStartCenter.x);
+      panY = startPanY + (currentCenter.y - touchStartCenter.y);
+
+      updateZoomTransform();
+    }
+  }, { passive: false });
+
+  viewport.addEventListener("touchend", (e) => {
+    if(e.touches.length < 2) {
+      isPinching = false;
+    }
+  });
+}
+
+function getTouchDistance(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function getTouchCenter(touches) {
+  return {
+    x: (touches[0].clientX + touches[1].clientX) / 2,
+    y: (touches[0].clientY + touches[1].clientY) / 2
+  };
+}
+
+function updateZoomTransform() {
+  const zoomLayer = document.getElementById("zoomLayer");
+  const indicator = document.getElementById("zoomIndicator");
+  if(zoomLayer) {
+    zoomLayer.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomScale})`;
+  }
+  if(indicator) {
+    indicator.innerText = `Zoom: ${Math.round(zoomScale * 100)}% (Pellizcar = Zoom / Mover)`;
+  }
+}
+
+function resetZoom() {
+  zoomScale = 1.0;
+  panX = 0;
+  panY = 0;
+  updateZoomTransform();
+}
+
 function startNewNote() {
   currentActiveNoteId = null;
   document.getElementById("moleskineTitleInput").value = "";
-  document.getElementById("pagesStack").innerHTML = "";
-  pagesData = [];
-  undoStacks = {};
-  basePageImages = {};
   currentCoords = null;
-  addNewPageBlock();
+  initNotebook();
   document.getElementById("btnCalendar").style.display = "none";
   document.getElementById("gpsStatus").innerText = "";
 }
 
-/* ---------- CÁMARA + RECORTE RÁPIDO ---------- */
 function handleFotoGPS(event) {
   const file = event.target.files[0];
   if(!file) return;
@@ -1244,8 +1328,18 @@ function handleFotoGPS(event) {
   reader.onload = function(e) {
     const img = new Image();
     img.onload = function() {
-      loadedRawImage = img;
-      openCropModal();
+      pendingImage = img;
+      const activePage = pagesData[activePageIndex];
+      const targetWidth = PAGE_WIDTH * 0.45;
+      const aspect = img.height / img.width;
+      const targetHeight = targetWidth * aspect;
+
+      pendingImgPos = { x: 50, y: 100, width: targetWidth, height: targetHeight };
+      document.getElementById("photoScale").value = 0.45;
+      document.getElementById("photoPosX").value = 50;
+      document.getElementById("photoPosY").value = 100;
+      document.getElementById("photoControls").style.display = "flex";
+      renderPendingImage();
     };
     img.src = e.target.result;
   };
@@ -1264,159 +1358,41 @@ function handleFotoGPS(event) {
   }
 }
 
-function openCropModal() {
-  const cropCanvas = document.getElementById("cropCanvas");
-  const ctx = cropCanvas.getContext("2d");
-
-  cropCanvas.width = loadedRawImage.width;
-  cropCanvas.height = loadedRawImage.height;
-  ctx.drawImage(loadedRawImage, 0, 0);
-
-  cropSelection = { x: 0, y: 0, w: loadedRawImage.width, h: loadedRawImage.height };
-  document.getElementById("cropModal").style.display = "flex";
-
-  initCropEvents(cropCanvas);
+function renderPendingImage() {
+  const page = pagesData[activePageIndex];
+  if(!pendingImage || !page) return;
+  savePageCanvasState(activePageIndex);
+  page.ctx.drawImage(pendingImage, pendingImgPos.x, pendingImgPos.y, pendingImgPos.width, pendingImgPos.height);
 }
 
-function initCropEvents(cropCanvas) {
-  const ctx = cropCanvas.getContext("2d");
-  let startX = 0, startY = 0;
-
-  function drawCropOverlay() {
-    ctx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
-    ctx.drawImage(loadedRawImage, 0, 0);
-
-    ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
-
-    ctx.clearRect(cropSelection.x, cropSelection.y, cropSelection.w, cropSelection.h);
-    ctx.drawImage(
-      loadedRawImage,
-      cropSelection.x, cropSelection.y, cropSelection.w, cropSelection.h,
-      cropSelection.x, cropSelection.y, cropSelection.w, cropSelection.h
-    );
-
-    ctx.strokeStyle = "#3b82f6";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(cropSelection.x, cropSelection.y, cropSelection.w, cropSelection.h);
-  }
-
-  cropCanvas.onpointerdown = (e) => {
-    isCropping = true;
-    const rect = cropCanvas.getBoundingClientRect();
-    startX = (e.clientX - rect.left) * (cropCanvas.width / rect.width);
-    startY = (e.clientY - rect.top) * (cropCanvas.height / rect.height);
-    cropSelection = { x: startX, y: startY, w: 0, h: 0 };
-  };
-
-  cropCanvas.onpointermove = (e) => {
-    if(!isCropping) return;
-    const rect = cropCanvas.getBoundingClientRect();
-    const curX = (e.clientX - rect.left) * (cropCanvas.width / rect.width);
-    const curY = (e.clientY - rect.top) * (cropCanvas.height / rect.height);
-
-    cropSelection.x = Math.min(startX, curX);
-    cropSelection.y = Math.min(startY, curY);
-    cropSelection.w = Math.abs(curX - startX);
-    cropSelection.h = Math.abs(curY - startY);
-
-    drawCropOverlay();
-  };
-
-  cropCanvas.onpointerup = () => { isCropping = false; };
+function updatePhotoScale(scaleVal) {
+  if(!pendingImage) return;
+  undoLastStroke();
+  const scale = parseFloat(scaleVal);
+  const targetWidth = PAGE_WIDTH * scale;
+  const aspect = pendingImage.height / pendingImage.width;
+  pendingImgPos.width = targetWidth;
+  pendingImgPos.height = targetWidth * aspect;
+  renderPendingImage();
 }
 
-function applyCrop() {
-  document.getElementById("cropModal").style.display = "none";
-  if(cropSelection.w < 20 || cropSelection.h < 20) {
-    croppedImage = loadedRawImage;
-  } else {
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = cropSelection.w;
-    tempCanvas.height = cropSelection.h;
-    const tCtx = tempCanvas.getContext("2d");
-    tCtx.drawImage(
-      loadedRawImage,
-      cropSelection.x, cropSelection.y, cropSelection.w, cropSelection.h,
-      0, 0, cropSelection.w, cropSelection.h
-    );
-    const img = new Image();
-    img.onload = () => {
-      croppedImage = img;
-      startPhotoPlacementOnActivePage();
-    };
-    img.src = tempCanvas.toDataURL("image/png");
-    return;
-  }
-  startPhotoPlacementOnActivePage();
+function updatePhotoPosX(xVal) {
+  if(!pendingImage) return;
+  undoLastStroke();
+  pendingImgPos.x = parseFloat(xVal);
+  renderPendingImage();
 }
 
-function skipCropUseFull() {
-  document.getElementById("cropModal").style.display = "none";
-  croppedImage = loadedRawImage;
-  startPhotoPlacementOnActivePage();
-}
-
-function startPhotoPlacementOnActivePage() {
-  if(!activePageId) {
-    if(pagesData.length > 0) setActivePage(pagesData[0].id);
-    else addNewPageBlock();
-  }
-
-  const canvas = document.getElementById(activePageId);
-  if(canvas) {
-    const ctx = canvas.getContext("2d");
-    basePageImages[activePageId] = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  }
-
-  const pIdx = pagesData.findIndex(p => p.id === activePageId) + 1;
-  document.getElementById("photoTargetLabel").innerText = `Ajustando foto en Página ${pIdx}:`;
-  document.getElementById("photoControls").style.display = "flex";
-  updatePhotoPreview();
-}
-
-function updatePhotoPreview() {
-  if(!croppedImage || !activePageId) return;
-  const canvas = document.getElementById(activePageId);
-  if(!canvas) return;
-  const ctx = canvas.getContext("2d");
-
-  const scale = parseFloat(document.getElementById("photoScale").value);
-  const posX = parseFloat(document.getElementById("photoPosX").value);
-  const posY = parseFloat(document.getElementById("photoPosY").value);
-
-  const targetWidth = canvas.width * scale;
-  const aspect = croppedImage.height / croppedImage.width;
-  const targetHeight = targetWidth * aspect;
-
-  if(basePageImages[activePageId]) {
-    ctx.putImageData(basePageImages[activePageId], 0, 0);
-  } else {
-    drawGridBackground(ctx, canvas);
-  }
-
-  ctx.drawImage(croppedImage, posX, posY, targetWidth, targetHeight);
+function updatePhotoPosY(yVal) {
+  if(!pendingImage) return;
+  undoLastStroke();
+  pendingImgPos.y = parseFloat(yVal);
+  renderPendingImage();
 }
 
 function confirmPhotoPlacement() {
   document.getElementById("photoControls").style.display = "none";
-  if(activePageId) delete basePageImages[activePageId];
-  croppedImage = null;
-  loadedRawImage = null;
-}
-
-function cancelPhotoPlacement() {
-  document.getElementById("photoControls").style.display = "none";
-  if(activePageId) {
-    const canvas = document.getElementById(activePageId);
-    if(canvas && basePageImages[activePageId]) {
-      const ctx = canvas.getContext("2d");
-      ctx.putImageData(basePageImages[activePageId], 0, 0);
-      delete basePageImages[activePageId];
-    }
-  }
-  croppedImage = null;
-  loadedRawImage = null;
+  pendingImage = null;
 }
 
 function switchTab(tab) {
@@ -1426,7 +1402,7 @@ function switchTab(tab) {
     if(resCount) resCount.style.display = "none";
     
     document.getElementById("moleskineSection").style.display = "block";
-    if(pagesData.length === 0) startNewNote();
+    if(pagesData.length === 0) initNotebook();
     renderMoleskineLibrary();
   }
 }
@@ -1442,10 +1418,17 @@ function saveMoleskineNote() {
   if(pagesData.length === 0) return;
   const title = document.getElementById("moleskineTitleInput").value.trim() || `Nota Moleskine ${new Date().toLocaleDateString()}`;
 
-  const pagesImages = pagesData.map(p => {
-    const c = document.getElementById(p.id);
-    return c ? c.toDataURL("image/png") : null;
-  }).filter(Boolean);
+  // Consolidar todas las páginas canvas en una única tira de imagen
+  const combinedCanvas = document.createElement("canvas");
+  combinedCanvas.width = PAGE_WIDTH;
+  combinedCanvas.height = PAGE_HEIGHT * pagesData.length;
+  const combCtx = combinedCanvas.getContext("2d");
+
+  pagesData.forEach((p, idx) => {
+    combCtx.drawImage(p.canvas, 0, idx * PAGE_HEIGHT);
+  });
+
+  const dataUrl = combinedCanvas.toDataURL("image/png");
 
   if(!currentActiveNoteId) {
     currentActiveNoteId = "moleskine_" + Date.now();
@@ -1455,8 +1438,9 @@ function saveMoleskineNote() {
   const noteEntry = {
     id: currentActiveNoteId,
     title,
+    pageCount: pagesData.length,
     date: new Date().toLocaleString(),
-    pages: pagesImages,
+    image: dataUrl,
     coords: currentCoords
   };
 
@@ -1469,7 +1453,7 @@ function saveMoleskineNote() {
   localStorage.setItem("moleskine_saved_notes", JSON.stringify(window.moleskineLibrary));
   if(window.saveToFirebase) window.saveToFirebase('moleskine_saved_notes', window.moleskineLibrary);
 
-  alert(`¡Nota "${title}" guardada correctamente!`);
+  alert(`¡Nota "${title}" (${pagesData.length} págs) guardada con éxito!`);
   renderMoleskineLibrary();
 }
 
@@ -1482,12 +1466,11 @@ function renderMoleskineLibrary() {
   }
   let html = "";
   window.moleskineLibrary.forEach(note => {
-    const count = note.pages ? note.pages.length : 1;
     html += `
       <div class="saved-note-card">
         <div>
           <strong style="color:#fff; font-size:0.9rem;">${escapeHtml(note.title)}</strong>
-          <div style="font-size:0.75rem; color:var(--muted);">${escapeHtml(note.date)} · ${count} pág(s)</div>
+          <div style="font-size:0.75rem; color:var(--muted);">${escapeHtml(note.date)} · ${note.pageCount || 1} página(s)</div>
         </div>
         <div style="display:flex; gap:6px;">
           <button onclick="loadSavedNote('${note.id}')" style="background:#2563eb; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.75rem;">📂 Cargar</button>
@@ -1501,30 +1484,24 @@ function renderMoleskineLibrary() {
 function loadSavedNote(id) {
   const note = window.moleskineLibrary.find(n => n.id === id);
   if(!note) return;
-  startNewNote();
-  document.getElementById("moleskineTitleInput").value = note.title;
-  currentActiveNoteId = note.id;
-  if(note.coords) currentCoords = note.coords;
+  const img = new Image();
+  img.onload = function() {
+    const totalPages = note.pageCount || 1;
+    document.getElementById("zoomLayer").innerHTML = "";
+    pagesData = [];
 
-  const pages = note.pages || [note.image];
-  document.getElementById("pagesStack").innerHTML = "";
-  pagesData = [];
-
-  pages.forEach((imgSrc, idx) => {
-    addNewPageBlock();
-    const pageId = pagesData[idx].id;
-    const canvas = document.getElementById(pageId);
-    if(canvas) {
-      const ctx = canvas.getContext("2d");
-      const img = new Image();
-      img.onload = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawGridBackground(ctx, canvas);
-        ctx.drawImage(img, 0, 0);
-      };
-      img.src = imgSrc;
+    for(let i = 0; i < totalPages; i++) {
+      addNewPage();
+      const pageCtx = pagesData[i].ctx;
+      pageCtx.drawImage(img, 0, i * PAGE_HEIGHT, PAGE_WIDTH, PAGE_HEIGHT, 0, 0, PAGE_WIDTH, PAGE_HEIGHT);
     }
-  });
+
+    currentActiveNoteId = note.id;
+    document.getElementById("moleskineTitleInput").value = note.title;
+    if(note.coords) currentCoords = note.coords;
+    alert(`Nota "${note.title}" cargada.`);
+  };
+  img.src = note.image;
 }
 
 function deleteSavedNote(id) {
