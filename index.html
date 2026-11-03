@@ -301,6 +301,8 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
       <option value="28">Brocha Acuarela</option>
     </select>
 
+    <button onclick="toggleShapes()" id="tool-shapes" class="moleskine-tool-btn">📐 Formas: sí</button>
+
     <label style="background:#3b82f6; color:white; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.80rem;">
       📷 Foto + GPS (Pág. Activa)
       <input type="file" accept="image/*" capture="environment" onchange="handleFotoGPS(event)" style="display:none;">
@@ -341,6 +343,8 @@ header p{color:var(--muted);font-size:.95rem;max-width:760px;margin:auto}
   <div id="gpsStatus" style="font-size:11px; color:var(--muted); font-style:italic; margin-top:4px;"></div>
 
   <!-- Biblioteca de Notas -->
+  <button id="floatingUndo" onclick="undoLastStrokePage(activePageId)" style="position:fixed; right:12px; bottom:calc(14px + env(safe-area-inset-bottom, 0px)); z-index:250; background:rgba(75,85,99,0.93); color:#fff; border:1px solid #9aa7b4; padding:12px 18px; border-radius:28px; font-weight:bold; font-size:1rem; box-shadow:0 4px 14px rgba(0,0,0,0.5); cursor:pointer;">↩️ Deshacer</button>
+
   <div class="saved-notes-list">
     <h3 style="color:var(--accent); margin-bottom:8px; font-size:1rem;">📚 Biblioteca de Notas Moleskine</h3>
     <div id="savedNotesContainer"></div>
@@ -1053,6 +1057,14 @@ function setActivePage(pageId) {
   document.querySelectorAll(".page-block").forEach(b => b.classList.remove("active-page"));
   const currentBlock = document.getElementById("block_" + pageId);
   if(currentBlock) currentBlock.classList.add("active-page");
+  refreshUndoLabel();
+}
+
+function refreshUndoLabel() {
+  const fu = document.getElementById("floatingUndo");
+  if(!fu) return;
+  const i = pagesData.findIndex(p => p.id === activePageId) + 1;
+  fu.textContent = i > 0 ? "↩️ Deshacer · Pág. " + i : "↩️ Deshacer";
 }
 
 function addNewPageBlock() {
@@ -1118,11 +1130,160 @@ function renumberPages() {
     const t = document.getElementById("title_" + p.id);
     if(t) t.textContent = "Página " + (i + 1);
   });
+  refreshUndoLabel();
+}
+
+/* ---------- FORMAS: mantener el lápiz quieto convierte el trazo en recta, círculo o elipse ---------- */
+let shapesOn = true;
+try { const sv = localStorage.getItem("moleskine_shapes_on"); if(sv !== null) shapesOn = (sv === "1"); } catch(_) {}
+
+function updateShapesButton() {
+  const b = document.getElementById("tool-shapes");
+  if(!b) return;
+  b.textContent = shapesOn ? "📐 Formas: sí" : "📐 Formas: no";
+  b.style.background = shapesOn ? "var(--accent)" : "#263442";
+  b.style.color = shapesOn ? "#000" : "#fff";
+}
+
+function toggleShapes() {
+  shapesOn = !shapesOn;
+  try { localStorage.setItem("moleskine_shapes_on", shapesOn ? "1" : "0"); } catch(_) {}
+  updateShapesButton();
+}
+updateShapesButton();
+
+const HOLD_MS = 550;
+
+function angleAt(p, c, n) {
+  const a1 = Math.atan2(p.y - c.y, p.x - c.x);
+  const a2 = Math.atan2(n.y - c.y, n.x - c.x);
+  let d = Math.abs(a1 - a2) * 180 / Math.PI;
+  if(d > 180) d = 360 - d;
+  return d;
+}
+
+function rdp(pts, eps) {
+  if(pts.length < 3) return pts;
+  const a = pts[0], b = pts[pts.length - 1];
+  const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+  let maxD = 0, idx = 0;
+  for(let i = 1; i < pts.length - 1; i++) {
+    const d = Math.abs((b.x - a.x) * (a.y - pts[i].y) - (a.x - pts[i].x) * (b.y - a.y)) / len;
+    if(d > maxD) { maxD = d; idx = i; }
+  }
+  if(maxD > eps) {
+    const l = rdp(pts.slice(0, idx + 1), eps);
+    const r = rdp(pts.slice(idx), eps);
+    return l.slice(0, -1).concat(r);
+  }
+  return [a, b];
+}
+
+function polygonFromStroke(pts, L) {
+  const eps = Math.max(10, 0.035 * L);
+  let k = 0, far = 0;
+  for(let i = 0; i < pts.length; i++) {
+    const d = Math.hypot(pts[i].x - pts[0].x, pts[i].y - pts[0].y);
+    if(d > far) { far = d; k = i; }
+  }
+  const first = rdp(pts.slice(0, k + 1), eps);
+  const second = rdp(pts.slice(k), eps);
+  const v = first.slice(0, -1).concat(second);
+  if(v.length > 1 && Math.hypot(v[v.length - 1].x - v[0].x, v[v.length - 1].y - v[0].y) < eps * 2) v.pop();
+  let changed = true;
+  while(changed && v.length > 3) {
+    changed = false;
+    for(let i = 0; i < v.length; i++) {
+      const p = v[(i + v.length - 1) % v.length], c = v[i], n = v[(i + 1) % v.length];
+      if(angleAt(p, c, n) > 155) { v.splice(i, 1); changed = true; break; }
+    }
+  }
+  return v;
+}
+
+function analyzeStroke(pts) {
+  if(pts.length < 6) return null;
+  let L = 0;
+  for(let i = 1; i < pts.length; i++) L += Math.hypot(pts[i].x - pts[i-1].x, pts[i].y - pts[i-1].y);
+  if(L < 50) return null;
+  const a = pts[0], b = pts[pts.length - 1];
+  const D = Math.hypot(b.x - a.x, b.y - a.y);
+
+  // Recta: el trazo va casi en línea recta de principio a fin
+  if(D >= 0.9 * L) {
+    let maxDev = 0;
+    for(const p of pts) {
+      const dev = Math.abs((b.x - a.x) * (a.y - p.y) - (a.x - p.x) * (b.y - a.y)) / D;
+      if(dev > maxDev) maxDev = dev;
+    }
+    if(maxDev <= Math.max(8, 0.06 * D)) return { type: "line", start: a };
+  }
+
+  // Figuras cerradas: el trazo vuelve casi al punto de partida
+  if(D <= 0.3 * L) {
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for(const p of pts) {
+      if(p.x < minX) minX = p.x;
+      if(p.x > maxX) maxX = p.x;
+      if(p.y < minY) minY = p.y;
+      if(p.y > maxY) maxY = p.y;
+    }
+    const w = maxX - minX, h = maxY - minY;
+    if(w < 30 || h < 30) return null;
+
+    // Círculo o elipse
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    const rx = w / 2, ry = h / 2;
+    let sum = 0, max = 0;
+    for(const p of pts) {
+      const r = Math.sqrt(Math.pow((p.x - cx) / rx, 2) + Math.pow((p.y - cy) / ry, 2));
+      const d = Math.abs(r - 1);
+      sum += d;
+      if(d > max) max = d;
+    }
+    if(sum / pts.length <= 0.12 && max <= 0.35) {
+      const aspect = w / h;
+      if(aspect >= 0.82 && aspect <= 1.22) {
+        const r = (rx + ry) / 2;
+        return { type: "circle", cx, cy, rx: r, ry: r };
+      }
+      return { type: "ellipse", cx, cy, rx, ry };
+    }
+
+    // Triángulo, rectángulo o cuadrilátero
+    const v = polygonFromStroke(pts, L);
+    const n = v.length;
+    if(n !== 3 && n !== 4) return null;
+    const angs = v.map((c, i) => angleAt(v[(i + n - 1) % n], c, v[(i + 1) % n]));
+    const sides = v.map((p, i) => Math.hypot(v[(i + 1) % n].x - p.x, v[(i + 1) % n].y - p.y));
+    if(Math.min(...sides) < 25) return null;
+    if(n === 3) {
+      if(Math.min(...angs) < 20) return null;
+      return { type: "poly", pts: v };
+    }
+    if(Math.min(...angs) < 45 || Math.max(...angs) > 135) return null;
+    const rightAngles = angs.every(g => g >= 75 && g <= 105);
+    const aligned = v.every((p, i) => {
+      const q = v[(i + 1) % 4];
+      const ang = Math.abs(Math.atan2(q.y - p.y, q.x - p.x) * 180 / Math.PI) % 90;
+      return Math.min(ang, 90 - ang) <= 10;
+    });
+    if(rightAngles && aligned) {
+      const xs = v.map(p => p.x), ys = v.map(p => p.y);
+      return { type: "rect", x1: Math.min(...xs), y1: Math.min(...ys), x2: Math.max(...xs), y2: Math.max(...ys) };
+    }
+    return { type: "poly", pts: v };
+  }
+  return null;
 }
 
 function initCanvasEvents(canvas, pageId) {
   let isDrawing = false;
   const ctx = canvas.getContext("2d");
+  let points = [];
+  let holdTimer = null;
+  let holdAnchor = null;
+  let snapped = null;
 
   function saveState() {
     if(!undoStacks[pageId]) undoStacks[pageId] = [];
@@ -1130,6 +1291,61 @@ function initCanvasEvents(canvas, pageId) {
     undoStacks[pageId].push(ctx.getImageData(0, 0, canvas.width, canvas.height));
   }
 
+  function applyStyle() {
+    ctx.lineWidth = currentSize;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = currentColor;
+  }
+
+  function restoreBase() {
+    const st = undoStacks[pageId];
+    if(st && st.length) ctx.putImageData(st[st.length - 1], 0, 0);
+  }
+
+  function drawLine(a, b) {
+    let ex = b.x, ey = b.y;
+    const dx = ex - a.x, dy = ey - a.y;
+    if(Math.abs(dy) < Math.abs(dx) * 0.07) ey = a.y;
+    else if(Math.abs(dx) < Math.abs(dy) * 0.07) ex = a.x;
+    restoreBase();
+    applyStyle();
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(ex, ey);
+    ctx.stroke();
+  }
+
+  function drawShape(sh) {
+    restoreBase();
+    applyStyle();
+    ctx.beginPath();
+    if(sh.type === "rect") {
+      ctx.rect(sh.x1, sh.y1, sh.x2 - sh.x1, sh.y2 - sh.y1);
+    } else if(sh.type === "poly") {
+      ctx.moveTo(sh.pts[0].x, sh.pts[0].y);
+      for(let i = 1; i < sh.pts.length; i++) ctx.lineTo(sh.pts[i].x, sh.pts[i].y);
+      ctx.closePath();
+    } else {
+      ctx.ellipse(sh.cx, sh.cy, sh.rx, sh.ry, 0, 0, Math.PI * 2);
+    }
+    ctx.stroke();
+  }
+
+  function armHold() {
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(trySnap, HOLD_MS);
+  }
+
+  function trySnap() {
+    if(!shapesOn || !isDrawing || snapped || currentTool === "eraser") return;
+    const res = analyzeStroke(points);
+    if(!res) return;
+    snapped = res;
+    if(res.type === "line") drawLine(res.start, points[points.length - 1]);
+    else drawShape(res);
+    try { if(navigator.vibrate) navigator.vibrate(15); } catch(_) {}
+  }
 
   // S Pen o ratón dibujan. El dedo solo mueve y hace zoom (ver initPageGestures)
   canvas.addEventListener("pointerdown", (e) => {
@@ -1143,6 +1359,10 @@ function initCanvasEvents(canvas, pageId) {
     const x = (e.clientX - rect.left) * (canvas.width / rect.width);
     const y = (e.clientY - rect.top) * (canvas.height / rect.height);
     ctx.moveTo(x, y);
+    points = [{ x, y }];
+    snapped = null;
+    holdAnchor = { x, y };
+    armHold();
   });
 
   canvas.addEventListener("pointermove", (e) => {
@@ -1151,6 +1371,11 @@ function initCanvasEvents(canvas, pageId) {
     const x = (e.clientX - rect.left) * (canvas.width / rect.width);
     const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
+    if(snapped) {
+      if(snapped.type === "line") drawLine(snapped.start, { x, y });
+      return;
+    }
+
     ctx.lineWidth = currentSize;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -1158,10 +1383,20 @@ function initCanvasEvents(canvas, pageId) {
 
     ctx.lineTo(x, y);
     ctx.stroke();
+
+    points.push({ x, y });
+    const tol = 3 * (canvas.width / rect.width);
+    if(Math.hypot(x - holdAnchor.x, y - holdAnchor.y) > tol) {
+      holdAnchor = { x, y };
+      armHold();
+    }
   });
 
   const stopDrawingPointer = (e) => {
     if(e && e.pointerType === "touch") return;
+    clearTimeout(holdTimer);
+    snapped = null;
+    points = [];
     isDrawing = false;
     window.__penDown = false;
   };
@@ -1433,6 +1668,8 @@ function startPhotoPlacementOnActivePage() {
   document.getElementById("photoControls").style.display = "flex";
   const tb = document.querySelector(".moleskine-toolbar");
   if(tb) tb.style.display = "none";
+  const fu = document.getElementById("floatingUndo");
+  if(fu) fu.style.display = "none";
   const pageCanvas = document.getElementById(activePageId);
   const pageBlock = pageCanvas ? pageCanvas.closest(".page-block") : null;
   if(pageBlock) pageBlock.scrollIntoView({ block: "start", inline: "nearest" });
@@ -1465,6 +1702,8 @@ function updatePhotoPreview() {
 function showToolbarAgain() {
   const tb = document.querySelector(".moleskine-toolbar");
   if(tb) tb.style.display = "";
+  const fu = document.getElementById("floatingUndo");
+  if(fu) fu.style.display = "";
 }
 
 function confirmPhotoPlacement() {
